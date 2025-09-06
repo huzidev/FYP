@@ -120,17 +120,16 @@ const SignIn = () => {
                 >
                   Forgot password?
                 </a>
-                <br/>
+                <br />
                 or
-                <br/>
+                <br />
                 <a
                   href="#"
                   className="text-sm text-indigo-400 hover:text-indigo-300 transition"
                 >
-                  Change Passward
+                  Change Password
                 </a>
               </div>
-              
 
               <div>
                 <button
