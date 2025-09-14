@@ -3,12 +3,14 @@ import React, { useState } from "react";
 import Eyebtn from "../../../Component/User/Eyebtn";
 import { FaUserCircle } from "react-icons/fa";
 import Header from "../../../Component/Header";
+import { useRouter } from "next/navigation";
 
 const SignIn = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showEye, setShowEye] = useState(false);
   const [errors, setErrors] = useState({});
+  const router = useRouter();
 
   const eyeToggle = (e) => {
     e.preventDefault();
@@ -39,7 +41,9 @@ const SignIn = () => {
     if (validate()) {
       console.log("✅ Username:", username);
       console.log("✅ Password:", password);
-      alert("Login successful!");
+
+      // redirect after login
+      router.push("/Admin/AdminPage");
     }
   };
 
@@ -47,15 +51,12 @@ const SignIn = () => {
     <div>
       <Header />
       <div className="min-h-screen flex items-center justify-center bg-[#1d1d24] px-4">
-        <div className="box max-w-md w-full cursor-pointer group">
+        <div className="box max-w-md w-full">
           <div
             className="
-            relative bg-[#2d2d39] border-8 border-[#25252b] rounded-xl 
-            p-6 shadow-2xl 
-            max-h-28 overflow-hidden 
-            transition-all duration-700 ease-in-out
-            group-hover:max-h-[800px]
-          "
+              relative bg-[#2d2d39] border-8 border-[#25252b] rounded-xl 
+              p-6 shadow-2xl
+            "
           >
             <div className="flex items-center justify-between">
               <p className="text-gray-300 font-semibold text-base">
@@ -66,7 +67,7 @@ const SignIn = () => {
 
             <form
               onSubmit={handleSubmit}
-              className="space-y-6 mt-6 opacity-0 group-hover:opacity-100 transition-opacity duration-700"
+              className="space-y-6 mt-6"
             >
               <div>
                 <label
