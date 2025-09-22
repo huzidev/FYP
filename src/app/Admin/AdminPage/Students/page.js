@@ -1,13 +1,12 @@
 "use client";
 
 import TopBar from "@/Component/Admin/TopBar/topbar"; // we'll create this next
-import StudentsTable from "@/Component/Admin/Student/studentsTable";
+// import StudentsTable from "@/Component/Admin/Student/studentsTable";
 import ActionButtons from "@/Component/Admin/Common/Buttons/actionButtons";
-import BulkFileUpload from "@/Component/Admin/Common/bulkFileUpload";
 import AddStudentForm from "@/Component/Admin/Common/addUserForm";
+import BulkFileUpload from "@/Component/Admin/Common/bulkFileUpload";
 import Modal from "@/Component/Admin/Common/modal";
 import { useState } from "react";
-import axios from "axios";
 
 export default function StudentsPage() {
   const [isAddUploadOpen, setisAddUploadOpen] = useState(false);
