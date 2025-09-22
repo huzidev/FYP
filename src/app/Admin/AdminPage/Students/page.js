@@ -75,10 +75,10 @@ export default function StudentsPage() {
       </Modal>
 
       {/* Content */}
-      <div className="bg-white rounded-2xl shadow-md p-6 mt-6">
+      {/* <div className="bg-white rounded-2xl shadow-md p-6 mt-6">
         <h2 className="text-2xl font-semibold mb-4">Students List</h2>
         <StudentsTable />
-      </div>
+      </div> */}
     </div>
   );
 }
