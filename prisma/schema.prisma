@@ -1,8 +1,4 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// schema.prisma
 
 generator client {
   provider = "prisma-client-js"
@@ -13,24 +9,119 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// User model
-model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  name      String?
-  posts     Post[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+// ==================== ADMIN ====================
+model Admin {
+  id        Int       @id @default(autoincrement())
+  fullName  String
+  email     String    @unique
+  password  String
+  role      AdminRole
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 }
 
-// Post model
-model Post {
-  id        Int      @id @default(autoincrement())
-  title     String
-  content   String?
-  published Boolean  @default(false)
-  author    User     @relation(fields: [authorId], references: [id])
-  authorId  Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+enum AdminRole {
+  ADMIN
+  SUPER_ADMIN
+}
+
+// ==================== STAFF ====================
+model Staff {
+  id        Int       @id @default(autoincrement())
+  fullName  String
+  email     String    @unique
+  password  String
+  role      StaffRole
+  staffId   String    @unique
+  subjects  Subject[] @relation("TeacherSubjects")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+enum StaffRole {
+  ADMISSION
+  TEACHER
+}
+
+// ==================== STUDENT ====================
+model Student {
+  id          Int          @id @default(autoincrement())
+  fullName    String
+  email       String       @unique
+  password    String
+  studentId   String       @unique
+  level       StudentLevel // <--- BACHELOR or MASTER
+  department  Department   @relation(fields: [departmentId], references: [id])
+  departmentId Int
+  fees        Fee?
+  enrollments Enrollment[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+enum StudentLevel {
+  BACHELOR
+  MASTER
+}
+
+// ==================== DEPARTMENT ====================
+model Department {
+  id        Int        @id @default(autoincrement())
+  name      String     @unique
+  students  Student[]
+  subjects  Subject[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+// ==================== SUBJECT ====================
+model Subject {
+  id          Int        @id @default(autoincrement())
+  name        String
+  code        String     @unique
+  department  Department @relation(fields: [departmentId], references: [id])
+  departmentId Int
+  teachers    Staff[]    @relation("TeacherSubjects")
+  enrollments Enrollment[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+// ==================== ENROLLMENT ====================
+model Enrollment {
+  id         Int       @id @default(autoincrement())
+  student    Student   @relation(fields: [studentId], references: [id])
+  studentId  Int
+  subject    Subject   @relation(fields: [subjectId], references: [id])
+  subjectId  Int
+  grade      Grade?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+}
+
+// ==================== GRADE ====================
+model Grade {
+  id           Int        @id @default(autoincrement())
+  enrollment   Enrollment @relation(fields: [enrollmentId], references: [id])
+  enrollmentId Int        @unique
+  gpa          Float
+  semester     String
+  createdAt    DateTime   @default(now())
+}
+
+// ==================== FEE ====================
+model Fee {
+  id        Int       @id @default(autoincrement())
+  amount    Float
+  status    FeeStatus
+  student   Student   @relation(fields: [studentId], references: [id])
+  studentId Int       @unique
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+enum FeeStatus {
+  PENDING
+  PAID
+  PARTIAL
 }
