@@ -1,20 +1,14 @@
 "use client";
 
-const Sidebar = ({ setActivePage }) => {
-  // Make sure the prop exists
-  if (!setActivePage) {
-    console.error("setActivePage prop is missing!");
-    return null;
-  }
-
+const Sidebar = ({ setActivePage = () => {} }) => {
   return (
     <div className="h-screen w-64 bg-gray-900 text-white flex flex-col shadow-lg">
-      {/* Logo */}
+      
       <div className="flex items-center justify-center h-20 border-b border-gray-700">
         <h1 className="text-2xl font-bold text-blue-400">MyAdmin</h1>
       </div>
 
-      {/* Menu Items */}
+      
       <nav className="flex-1 p-5 space-y-4">
         <button
           onClick={() => setActivePage("students")}
