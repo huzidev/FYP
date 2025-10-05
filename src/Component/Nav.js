@@ -25,7 +25,7 @@ export default function Navbar() {
         </div>
 
         
-        <div className="relative text-black">
+        <div className="relative text-white">
           <button
             onClick={() => setOpen(!open)}
             className=" font-medium hover:text-gray-300 focus:outline-none"
