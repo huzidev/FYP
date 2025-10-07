@@ -17,22 +17,18 @@ export default function AdminPage() {
         return <TeachersTable />;
       case "employee":
         return <EmployeesTable />;
-      case "admission":
-        return <h2 className="text-2xl font-semibold">Admission Data</h2>;
       default:
-        return <h2 className="text-2xl font-semibold">Select a section</h2>;
+        return <h2 className="text-2xl font-semibold">Select a page</h2>;
     }
   };
 
   return (
     <div className="flex min-h-screen">
       {/* Sidebar */}
-      <Sidebar activePage={activePage} setActivePage={setActivePage} />
+      <Sidebar setActivePage={setActivePage} />
 
       {/* Main Content */}
-      <div className="flex-1 bg-gray-100 p-10 transition-all duration-300">
-        {renderContent()}
-      </div>
+      <div className="flex-1 bg-gray-100 p-10">{renderContent()}</div>
     </div>
   );
 }
