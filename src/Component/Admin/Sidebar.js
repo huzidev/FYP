@@ -1,6 +1,13 @@
 "use client";
 
-const Sidebar = ({ setActivePage = () => {} }) => {
+const Sidebar = ({ activePage, setActivePage }) => {
+  const menuItems = [
+    { key: "students", label: "Students" },
+    { key: "teacher", label: "Teachers" },
+    { key: "employee", label: "Employees" },
+    { key: "admission", label: "Admissions" },
+  ];
+
   return (
     <div className="h-screen w-64 bg-gray-900 text-white flex flex-col shadow-lg">
       
@@ -8,26 +15,21 @@ const Sidebar = ({ setActivePage = () => {} }) => {
         <h1 className="text-2xl font-bold text-blue-400">MyAdmin</h1>
       </div>
 
-      
-      <nav className="flex-1 p-5 space-y-4">
-        <button
-          onClick={() => setActivePage("students")}
-          className="w-full text-left py-2 px-4 rounded-lg hover:bg-gray-700 transition"
-        >
-          Students
-        </button>
-        <button
-          onClick={() => setActivePage("teacher")}
-          className="w-full text-left py-2 px-4 rounded-lg hover:bg-gray-700 transition"
-        >
-          Teacher
-        </button>
-        <button
-          onClick={() => setActivePage("employee")}
-          className="w-full text-left py-2 px-4 rounded-lg hover:bg-gray-700 transition"
-        >
-          Employee
-        </button>
+     
+      <nav className="flex-1 p-5 space-y-3">
+        {menuItems.map((item) => (
+          <button
+            key={item.key}
+            onClick={() => setActivePage(item.key)}
+            className={`w-full text-left py-2 px-4 rounded-lg transition-all duration-200 ${
+              activePage === item.key
+                ? "bg-gray-700 text-blue-400"
+                : "hover:bg-gray-700"
+            }`}
+          >
+            {item.label}
+          </button>
+        ))}
       </nav>
     </div>
   );
