@@ -65,6 +65,7 @@ model Student {
   password      String
   studentId     String       @unique
   level         StudentLevel // <--- BACHELOR or MASTER
+  gender        Gender?
   phone         String?
   address       String?
   dateOfBirth   DateTime?
@@ -86,6 +87,12 @@ model Student {
 enum StudentLevel {
   BACHELOR
   MASTER
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
 }
 
 // ==================== DEPARTMENT ====================

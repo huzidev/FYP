@@ -41,31 +41,31 @@ async function main() {
 
   // Create Admin
   console.log('👤 Creating admin user...');
-  const hashedAdminPassword = await bcrypt.hash('admin123', 10);
+  const hashedAdminPassword = await bcrypt.hash('admin@smi.com', 10);
   const admin = await prisma.admin.upsert({
-    where: { email: 'admin@university.edu' },
+    where: { email: 'admin@smi.com' },
     update: {},
     create: {
       fullName: 'System Administrator',
-      email: 'admin@university.edu',
+      email: 'admin@smi.com',
       password: hashedAdminPassword,
       role: 'SUPER_ADMIN',
       phone: '+1234567890',
-      address: 'University Campus',
+      address: 'SMI Campus',
     },
   });
-  console.log('✅ Created admin user: admin@university.edu / admin123');
+  console.log('✅ Created admin user: admin@smi.com / admin@smi.com');
 
   // Create Staff Members
   console.log('👨‍🏫 Creating staff members...');
-  const hashedStaffPassword = await bcrypt.hash('staff123', 10);
+  const hashedStaffPassword = await bcrypt.hash('staff@smi.com', 10);
   const staffMembers = await Promise.all([
     prisma.staff.upsert({
-      where: { email: 'john.teacher@university.edu' },
+      where: { email: 'staff@smi.com' },
       update: {},
       create: {
         fullName: 'Dr. John Smith',
-        email: 'john.teacher@university.edu',
+        email: 'staff@smi.com',
         password: hashedStaffPassword,
         role: 'TEACHER',
         staffId: 'T001',
@@ -75,11 +75,11 @@ async function main() {
       },
     }),
     prisma.staff.upsert({
-      where: { email: 'admission@university.edu' },
+      where: { email: 'admission@smi.com' },
       update: {},
       create: {
         fullName: 'Sarah Johnson',
-        email: 'admission@university.edu',
+        email: 'admission@smi.com',
         password: hashedStaffPassword,
         role: 'ADMISSION',
         staffId: 'A001',
@@ -149,19 +149,20 @@ async function main() {
 
   // Create Sample Students
   console.log('🎓 Creating sample students...');
-  const hashedStudentPassword = await bcrypt.hash('student123', 10);
+  const hashedStudentPassword = await bcrypt.hash('student@smi.com', 10);
   const students = await Promise.all([
     prisma.student.upsert({
-      where: { email: 'alice.student@university.edu' },
+      where: { email: 'student@smi.com' },
       update: {},
       create: {
         fullName: 'Alice Williams',
-        email: 'alice.student@university.edu',
+        email: 'student@smi.com',
         password: hashedStudentPassword,
         studentId: 'STD001',
         level: 'BACHELOR',
+        gender: 'FEMALE',
         phone: '+1234567893',
-        address: '123 Student St',
+        address: '123 Student Street, SMI City, Country',
         dateOfBirth: new Date('2002-05-15'),
         fatherName: 'Robert Williams',
         cnic: '12345-6789012-3',
@@ -170,16 +171,17 @@ async function main() {
       },
     }),
     prisma.student.upsert({
-      where: { email: 'bob.student@university.edu' },
+      where: { email: 'student2@smi.com' },
       update: {},
       create: {
         fullName: 'Bob Davis',
-        email: 'bob.student@university.edu',
+        email: 'student2@smi.com',
         password: hashedStudentPassword,
         studentId: 'STD002',
         level: 'BACHELOR',
+        gender: 'MALE',
         phone: '+1234567894',
-        address: '456 Campus Ave',
+        address: '456 Campus Avenue, SMI City, Country',
         dateOfBirth: new Date('2001-12-20'),
         fatherName: 'Michael Davis',
         cnic: '12345-6789012-4',
@@ -189,8 +191,8 @@ async function main() {
     }),
   ]);
   console.log(`✅ Created ${students.length} sample students`);
-  console.log('   Login: alice.student@university.edu / student123');
-  console.log('   Login: bob.student@university.edu / student123');
+  console.log('   Login: student@smi.com / student@smi.com');
+  console.log('   Login: student2@smi.com / student2@smi.com');
 
   // Create Academic Year and Semester
   console.log('📅 Creating academic periods...');
@@ -274,11 +276,11 @@ async function main() {
 
   console.log('🎉 Database seeded successfully!');
   console.log('\n📋 Test Login Credentials:');
-  console.log('👤 Admin: admin@university.edu / admin123');
-  console.log('👨‍🏫 Staff: john.teacher@university.edu / staff123');
-  console.log('👩‍💼 Admission: admission@university.edu / staff123');
-  console.log('🎓 Student 1: alice.student@university.edu / student123');
-  console.log('🎓 Student 2: bob.student@university.edu / student123');
+  console.log('👤 Admin: admin@smi.com / admin@smi.com');
+  console.log('👨‍🏫 Staff: staff@smi.com / staff@smi.com');
+  console.log('👩‍💼 Admission: admission@smi.com / staff@smi.com');
+  console.log('🎓 Student 1: student@smi.com / student@smi.com');
+  console.log('🎓 Student 2: student2@smi.com / student2@smi.com');
 }
 
 main()

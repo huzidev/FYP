@@ -26,6 +26,20 @@ const Page = () => {
   const [showOptions, setShowOptions] = useState(false);
 
   useEffect(() => {
+    // Check if user is authenticated and redirect to appropriate dashboard
+    const checkAuth = async () => {
+      if (typeof window !== 'undefined') {
+        const { isAuthenticated, getCurrentUser, getDashboardRoute } = await import("../lib/auth");
+        if (isAuthenticated()) {
+          const user = getCurrentUser();
+          if (user && user.userType) {
+            window.location.href = getDashboardRoute(user.userType);
+          }
+        }
+      }
+    };
+    checkAuth();
+
     const interval = setInterval(() => {
       setCurrent((prev) => (prev + 1) % announcements.length);
     }, 4000);

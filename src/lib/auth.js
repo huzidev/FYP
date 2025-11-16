@@ -68,12 +68,7 @@ export const clearCurrentUser = () => {
   }
 };
 
-/**
- * Check if user is authenticated
- */
-export const isAuthenticated = () => {
-  return getCurrentUser() !== null;
-};
+// Note: isAuthenticated is defined later with token check
 
 /**
  * Check if user has specific role/type
@@ -151,6 +146,40 @@ export const redirectToLogin = (userType = '') => {
   
   const route = loginRoutes[userType] || '/';
   window.location.href = route;
+};
+
+/**
+ * Set authentication token
+ */
+export const setToken = (token) => {
+  if (typeof window === 'undefined') return;
+  
+  try {
+    localStorage.setItem(STORAGE_KEYS.TOKEN, token);
+  } catch (error) {
+    console.error('Error setting token:', error);
+  }
+};
+
+/**
+ * Get authentication token
+ */
+export const getToken = () => {
+  if (typeof window === 'undefined') return null;
+  
+  try {
+    return localStorage.getItem(STORAGE_KEYS.TOKEN);
+  } catch (error) {
+    console.error('Error getting token:', error);
+    return null;
+  }
+};
+
+/**
+ * Check if user is authenticated (has both user data and token)
+ */
+export const isAuthenticated = () => {
+  return getCurrentUser() !== null && getToken() !== null;
 };
 
 /**

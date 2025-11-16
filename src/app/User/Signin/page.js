@@ -1,5 +1,6 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Eyebtn from "../../../Component/User/Eyebtn";
 import { FaUserCircle } from "react-icons/fa";
 import Header from "../../../Component/Header";
@@ -9,6 +10,18 @@ const SignIn = () => {
   const [password, setPassword] = useState("");
   const [showEye, setShowEye] = useState(false);
   const [errors, setErrors] = useState({});
+  const router = useRouter();
+  
+  useEffect(() => {
+    // Check if user is already logged in
+    const checkAuth = async () => {
+      const { isAuthenticated, getDashboardRoute, USER_TYPES } = await import("../../../lib/auth");
+      if (isAuthenticated()) {
+        router.push(getDashboardRoute(USER_TYPES.STUDENT));
+      }
+    };
+    checkAuth();
+  }, [router]);
 
   const eyeToggle = (e) => {
     e.preventDefault();
@@ -34,12 +47,38 @@ const SignIn = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (validate()) {
-      console.log("✅ Username:", username);
-      console.log("✅ Password:", password);
-      alert("Login successful!");
+      try {
+        // Import StudentService and auth utilities
+        const { StudentService } = await import("../../../lib/api");
+        const { setCurrentUser, getDashboardRoute, USER_TYPES } = await import("../../../lib/auth");
+        
+        const credentials = {
+          email: username,
+          password: password,
+        };
+        
+        const response = await StudentService.login(credentials);
+        
+        if (response.data) {
+          // Set user data in localStorage
+          setCurrentUser(response.data, USER_TYPES.STUDENT);
+          
+          // Generate and store a simple token
+          const token = `token_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+          localStorage.setItem('token', token);
+          
+          alert("Login successful!");
+          
+          // Redirect to student dashboard
+          window.location.href = getDashboardRoute(USER_TYPES.STUDENT);
+        }
+      } catch (error) {
+        console.error("Login error:", error);
+        alert("Login failed: " + (error.message || "Invalid credentials"));
+      }
     }
   };
 
