@@ -36,21 +36,21 @@ export default function Navbar() {
           {open && (
             <div className="absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg py-2">
               <Link
-                href="/Admin/Signin"
+                href="/admin/signin"
                 className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
                 onClick={() => setOpen(false)}
               >
                 Admin
               </Link>
               <Link
-                href="/Admission/Signin"
+                href="/admission/signin"
                 className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
                 onClick={() => setOpen(false)}
               >
                 Admission
               </Link>
               <Link
-                href="/User/Signin"
+                href="/user/signin"
                 className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
                 onClick={() => setOpen(false)}
               >

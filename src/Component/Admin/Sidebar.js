@@ -7,9 +7,9 @@ const Sidebar = () => {
   const pathname = usePathname();
 
   const pageItems = [
-    { name: "Dashboard", path: "/Admin/AdminPage/Dashboard" },
-    { name: "Students", path: "/Admin/AdminPage/Students" },
-    { name: "Teachers", path: "/Admin/AdminPage/Teachers" },
+    { name: "Dashboard", path: "/admin/admin-page/dashboard" },
+    { name: "Students", path: "/admin/admin-page/students" },
+    { name: "Teachers", path: "/admin/admin-page/teachers" },
   ];
 
   return (

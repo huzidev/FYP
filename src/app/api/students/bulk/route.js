@@ -1,0 +1,134 @@
+import { prisma } from '@/lib/prisma';
+import { NextResponse } from 'next/server';
+import Papa from 'papaparse';
+import bcrypt from 'bcrypt';
+
+// POST /api/students/bulk - Bulk upload students via CSV
+export async function POST(request) {
+  try {
+    const formData = await request.formData();
+    const file = formData.get('file');
+
+    if (!file) {
+      return NextResponse.json(
+        { error: 'No file uploaded' },
+        { status: 400 }
+      );
+    }
+
+    // Read file content
+    const fileContent = await file.text();
+
+    // Parse CSV
+    const parseResult = Papa.parse(fileContent, {
+      header: true,
+      skipEmptyLines: true,
+    });
+
+    if (parseResult.errors.length > 0) {
+      return NextResponse.json(
+        { error: 'Invalid CSV format', details: parseResult.errors },
+        { status: 400 }
+      );
+    }
+
+    const studentsData = parseResult.data;
+    const results = {
+      success: [],
+      errors: [],
+    };
+
+    // Process each student
+    for (let i = 0; i < studentsData.length; i++) {
+      try {
+        const studentData = studentsData[i];
+        
+        // Validation
+        if (!studentData.fullName || !studentData.email || !studentData.studentId || 
+            !studentData.level || !studentData.departmentId) {
+          results.errors.push({
+            row: i + 1,
+            error: 'Missing required fields',
+            data: studentData,
+          });
+          continue;
+        }
+
+        // Check if student already exists
+        const existingStudent = await prisma.student.findFirst({
+          where: {
+            OR: [
+              { email: studentData.email },
+              { studentId: studentData.studentId },
+              ...(studentData.cnic && [{ cnic: studentData.cnic }]),
+            ],
+          },
+        });
+
+        if (existingStudent) {
+          results.errors.push({
+            row: i + 1,
+            error: 'Student already exists',
+            data: studentData,
+          });
+          continue;
+        }
+
+        // Create student (with default password)
+        const defaultPassword = studentData.password || studentData.studentId;
+        const hashedPassword = await bcrypt.hash(defaultPassword, 10);
+
+        const student = await prisma.student.create({
+          data: {
+            fullName: studentData.fullName,
+            email: studentData.email,
+            password: hashedPassword,
+            studentId: studentData.studentId,
+            level: studentData.level,
+            departmentId: parseInt(studentData.departmentId),
+            phone: studentData.phone || null,
+            address: studentData.address || null,
+            dateOfBirth: studentData.dateOfBirth ? new Date(studentData.dateOfBirth) : null,
+            fatherName: studentData.fatherName || null,
+            cnic: studentData.cnic || null,
+            admissionDate: studentData.admissionDate ? new Date(studentData.admissionDate) : null,
+          },
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+            studentId: true,
+            level: true,
+          },
+        });
+
+        results.success.push({
+          row: i + 1,
+          data: student,
+        });
+      } catch (error) {
+        results.errors.push({
+          row: i + 1,
+          error: error.message,
+          data: studentsData[i],
+        });
+      }
+    }
+
+    return NextResponse.json({
+      message: 'Bulk upload completed',
+      results: {
+        total: studentsData.length,
+        successful: results.success.length,
+        failed: results.errors.length,
+        details: results,
+      },
+    });
+  } catch (error) {
+    console.error('Error in bulk upload:', error);
+    return NextResponse.json(
+      { error: 'Bulk upload failed' },
+      { status: 500 }
+    );
+  }
+}
