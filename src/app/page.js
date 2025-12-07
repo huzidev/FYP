@@ -84,50 +84,6 @@ const Page = () => {
         </div>
       </section>
 
-      {/* API Test & Quick Links */}
-      <section className="bg-blue-900 py-16 px-6 text-white">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl font-semibold mb-6">🚀 System Ready!</h2>
-          <p className="text-blue-100 max-w-2xl mx-auto mb-8">
-            The university management system is fully configured with database, API routes, 
-            and sample data. Test the system or login with the credentials below.
-          </p>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            {/* API Test */}
-            <div className="bg-blue-800 rounded-lg p-6">
-              <h3 className="text-xl font-semibold mb-3">🔧 API Test</h3>
-              <p className="text-blue-100 text-sm mb-4">
-                Verify database connection and API functionality
-              </p>
-              <Link 
-                href="/test" 
-                className="inline-block px-6 py-2 bg-white text-blue-900 rounded font-semibold hover:bg-gray-100 transition"
-              >
-                Test API →
-              </Link>
-            </div>
-
-            {/* Sample Logins */}
-            <div className="bg-blue-800 rounded-lg p-6">
-              <h3 className="text-xl font-semibold mb-3">🔑 Test Logins</h3>
-              <div className="text-sm text-blue-100 space-y-1 mb-4">
-                <div><strong>Admin:</strong> admin@university.edu</div>
-                <div><strong>Staff:</strong> john.teacher@university.edu</div>
-                <div><strong>Student:</strong> alice.student@university.edu</div>
-                <div className="text-xs">(Password: admin123, staff123, student123)</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-green-100 text-green-800 rounded-lg p-4 text-sm">
-            <strong>✅ Database Status:</strong> Connected to Prisma Cloud Database | 
-            <strong> Sample Data:</strong> Loaded | 
-            <strong> API Routes:</strong> Active
-          </div>
-        </div>
-      </section>
-
       {/* --------About------ */}
       <section className="bg-[#2f2f37] py-16 px-6 text-center">
         <h2 className="text-3xl font-semibold mb-4">About Our Portal</h2>

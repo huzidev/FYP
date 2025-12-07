@@ -4,7 +4,7 @@ import Header from "@/Component/Header";
 import { AdminService, ApiError } from "@/lib/api";
 import { getCurrentUser, verifyAuth } from "@/lib/auth";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 export default function EditAdminPage() {
   const params = useParams();
@@ -15,6 +15,33 @@ export default function EditAdminPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const currentUser = getCurrentUser();
+
+  const fetchAdmin = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await AdminService.getById(params.id);
+      setAdmin(response.data.data);
+
+      setFormData({
+        fullName: response.data.data.fullName || "",
+        email: response.data.data.email || "",
+        phone: response.data.data.phone || "",
+        address: response.data.data.address || "",
+        role: response.data.data.role || "ADMIN",
+      });
+
+      setError(null);
+    } catch (err) {
+      console.error("Error fetching admin:", err);
+      if (err instanceof ApiError) {
+        setError(err.message);
+      } else {
+        setError("Failed to fetch admin");
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [params.id]);
 
   useEffect(() => {
     const checkAuth = () => {
@@ -27,34 +54,7 @@ export default function EditAdminPage() {
 
     checkAuth();
     fetchAdmin();
-  }, [params.id, router]);
-
-  const fetchAdmin = async () => {
-    try {
-      setLoading(true);
-      const response = await AdminService.getById(params.id);
-      setAdmin(response.data.data);
-      
-      setFormData({
-        fullName: response.data.data.fullName || "",
-        email: response.data.data.email || "",
-        phone: response.data.data.phone || "",
-        address: response.data.data.address || "",
-        role: response.data.data.role || "ADMIN",
-      });
-      
-      setError(null);
-    } catch (err) {
-      console.error("Error fetching admin:", err);
-      if (err instanceof ApiError) {
-        setError(err.message);
-      } else {
-        setError("Failed to fetch admin");
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [params.id, router, fetchAdmin]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -125,7 +125,7 @@ export default function EditAdminPage() {
   if (!canEdit()) {
     return (
       <div className="min-h-screen bg-[#1d1d24] flex items-center justify-center">
-        <div className="text-red-400">You don't have permission to edit this admin</div>
+        <div className="text-red-400">You don&apos;t have permission to edit this admin</div>
       </div>
     );
   }
