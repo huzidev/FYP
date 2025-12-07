@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
-import { NextResponse } from 'next/server';
 import bcrypt from 'bcrypt';
+import { NextResponse } from 'next/server';
 
 // GET /api/students - Get all students
 export async function GET(request) {
@@ -108,11 +108,39 @@ export async function POST(request) {
     } = body;
 
     // Validation
-    if (!fullName || !email || !password || !studentId || !level || !departmentId) {
+    if (!fullName || !email || !password || !level || !departmentId) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
       );
+    }
+
+    // Auto-generate student ID if not provided
+    let finalStudentId = studentId;
+    if (!finalStudentId) {
+      // Get department code
+      const department = await prisma.department.findUnique({
+        where: { id: parseInt(departmentId) },
+        select: { code: true },
+      });
+      
+      // Get the last student ID for this department
+      const lastStudent = await prisma.student.findFirst({
+        where: {
+          studentId: {
+            startsWith: department?.code || 'STD',
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      // Generate new student ID
+      if (lastStudent) {
+        const lastNum = parseInt(lastStudent.studentId.replace(/[^0-9]/g, '')) || 0;
+        finalStudentId = `${department?.code || 'STD'}${String(lastNum + 1).padStart(4, '0')}`;
+      } else {
+        finalStudentId = `${department?.code || 'STD'}0001`;
+      }
     }
 
     // Check if student already exists
@@ -120,7 +148,7 @@ export async function POST(request) {
       where: {
         OR: [
           { email },
-          { studentId },
+          { studentId: finalStudentId },
           ...(cnic && [{ cnic }]),
         ],
       },
@@ -142,7 +170,7 @@ export async function POST(request) {
         fullName,
         email,
         password: hashedPassword,
-        studentId,
+        studentId: finalStudentId,
         level,
         departmentId: parseInt(departmentId),
         phone,

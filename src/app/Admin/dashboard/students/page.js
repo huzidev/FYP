@@ -1,21 +1,36 @@
 "use client";
 
-import ActionButtons from "@/Component/Admin/Common/Buttons/actionButtons";
 import AddStudentForm from "@/Component/Admin/Common/addUserForm";
 import BulkFileUpload from "@/Component/Admin/Common/bulkFileUpload";
-import Modal from "@/Component/Admin/Common/modal";
 import StudentsTable from "@/Component/Admin/Student/StudentsTable";
+import Modal from "@/Component/Common/Modal";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export default function StudentsPage() {
   const [isAddUploadOpen, setIsAddUploadOpen] = useState(false);
   const [isBulkUploadOpen, setBulkUploadOpen] = useState(false);
   const [isBulkUpdateOpen, setIsBulkUpdateOpen] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const router = useRouter();
 
   const handleClose = () => {
     setIsAddUploadOpen(false);
     setBulkUploadOpen(false);
     setIsBulkUpdateOpen(false);
+    setShowSuccess(false);
+  };
+
+  const handleSuccess = (data) => {
+    setShowSuccess(true);
+    // Refresh the table
+    setRefreshKey(prev => prev + 1);
+  };
+
+  const handleCreateNew = () => {
+    setShowSuccess(false);
+    // Form will reset automatically
   };
 
   const handleBulkSubmit = (file, mode) => {
@@ -38,17 +53,49 @@ export default function StudentsPage() {
           <p className="text-gray-400">Manage all students</p>
         </div>
         <div className="flex gap-3">
-          <ActionButtons
-            onAdd={() => setIsAddUploadOpen(true)}
-            onBulkUpload={() => setBulkUploadOpen(true)}
-            onBulkUpdate={() => setIsBulkUpdateOpen(true)}
-          />
+          <button
+            onClick={() => setIsAddUploadOpen(true)}
+            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition"
+          >
+            + Create Student
+          </button>
         </div>
       </div>
 
       {/* Modals */}
-      <Modal isOpen={isAddUploadOpen} onClose={handleClose} title="Add Student">
-        <AddStudentForm />
+      <Modal 
+        isOpen={isAddUploadOpen} 
+        onClose={handleClose} 
+        title={showSuccess ? "Student Created Successfully" : "Create Student"}
+        size="xl"
+      >
+        {showSuccess ? (
+          <div className="space-y-4">
+            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
+              Student created successfully!
+            </div>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={handleClose}
+                className="px-4 py-2 bg-[#1e1e26] text-gray-300 rounded-lg hover:bg-[#25252b] transition"
+              >
+                Close Modal
+              </button>
+              <button
+                onClick={handleCreateNew}
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition"
+              >
+                Create New Student
+              </button>
+            </div>
+          </div>
+        ) : (
+          <AddStudentForm 
+            userType="student" 
+            onSuccess={handleSuccess}
+            onCancel={handleClose}
+          />
+        )}
       </Modal>
 
       <Modal
@@ -75,7 +122,7 @@ export default function StudentsPage() {
 
       {/* Students Table */}
       <div className="bg-[#2d2d39] rounded-xl p-6 border border-[#25252b]">
-        <StudentsTable />
+        <StudentsTable key={refreshKey} />
       </div>
     </div>
   );

@@ -1,11 +1,7 @@
 "use client";
 import { useState } from "react";
-import { 
-  AdminService, 
-  StaffService, 
-  StudentService, 
-  DepartmentService, 
-  ApiError 
+import {
+    DepartmentService
 } from "../../lib/api";
 
 export default function ApiTester() {
@@ -132,7 +128,7 @@ export default function ApiTester() {
 
         {results.length === 0 && !loading && (
           <div className="text-center text-gray-500 py-8">
-            No test results yet. Click "Run Tests" to start.
+            No test results yet. Click &quot;Run Tests&quot; to start.
           </div>
         )}
       </div>

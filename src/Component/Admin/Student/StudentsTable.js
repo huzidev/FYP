@@ -1,6 +1,8 @@
 "use client";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ApiError, StudentService } from "../../../lib/api";
+import ConfirmModal from "../../Common/ConfirmModal";
 
 export default function StudentsTable() {
   const [students, setStudents] = useState([]);
@@ -10,6 +12,8 @@ export default function StudentsTable() {
   const [selectedDepartment, setSelectedDepartment] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState({});
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, student: null });
+  const router = useRouter();
 
   const fetchStudents = async (page = 1, search = "", departmentId = "") => {
     try {
@@ -53,6 +57,19 @@ export default function StudentsTable() {
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
+  };
+
+  const handleDelete = async () => {
+    if (!deleteModal.student) return;
+    
+    try {
+      await StudentService.delete(deleteModal.student.id);
+      fetchStudents(currentPage, searchTerm, selectedDepartment);
+      setDeleteModal({ isOpen: false, student: null });
+    } catch (err) {
+      console.error("Error deleting student:", err);
+      alert("Failed to delete student");
+    }
   };
 
   const formatDate = (dateString) => {
@@ -140,13 +157,22 @@ export default function StudentsTable() {
                   </td>
                   <td className="border border-gray-600 px-4 py-2">
                     <div className="flex space-x-2">
-                      <button className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm">
+                      <button
+                        onClick={() => router.push(`/admin/dashboard/students/${student.id}`)}
+                        className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
+                      >
                         View
                       </button>
-                      <button className="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-sm">
+                      <button
+                        onClick={() => router.push(`/admin/dashboard/students/${student.id}/edit`)}
+                        className="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-sm"
+                      >
                         Edit
                       </button>
-                      <button className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm">
+                      <button
+                        onClick={() => setDeleteModal({ isOpen: true, student })}
+                        className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
+                      >
                         Delete
                       </button>
                     </div>
@@ -198,6 +224,17 @@ export default function StudentsTable() {
           <div className="text-sm text-gray-400">Updating...</div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false, student: null })}
+        onConfirm={handleDelete}
+        title="Delete Student"
+        message={`Are you sure you want to delete ${deleteModal.student?.fullName}? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+      />
     </div>
   );
 }
