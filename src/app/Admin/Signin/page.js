@@ -1,9 +1,9 @@
 "use client";
-import React, { useState } from "react";
-import Eyebtn from "../../../Component/User/Eyebtn";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { FaUserCircle } from "react-icons/fa";
 import Header from "../../../Component/Header";
-import { useRouter } from "next/navigation";
+import Eyebtn from "../../../Component/User/Eyebtn";
 import { AdminService, ApiError } from "../../../lib/api";
 import { setCurrentUser, USER_TYPES } from "../../../lib/auth";
 
@@ -52,11 +52,21 @@ const SignIn = () => {
     try {
       const response = await AdminService.login({ email, password });
       
-      // Store user data using auth utility
-      setCurrentUser(response.data, USER_TYPES.ADMIN);
-      
-      // Redirect after successful login
-      router.push("/admin/admin-page");
+      // The API returns { message: 'Login successful', data: {...}, token: '...' }
+      // And baseFetch wraps it in { data: {...} }
+      if (response.data && response.data.data && response.data.token) {
+        // Store user data using auth utility
+        setCurrentUser(response.data.data, USER_TYPES.ADMIN);
+        
+        // Store token
+        const { setToken } = await import("../../../lib/auth");
+        setToken(response.data.token);
+        
+        // Redirect after successful login
+        router.push("/admin/dashboard");
+      } else {
+        throw new Error("Invalid response format from server");
+      }
     } catch (error) {
       console.error("Login error:", error);
       

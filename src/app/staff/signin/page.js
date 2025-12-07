@@ -1,14 +1,19 @@
 "use client";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { FaUserCircle } from "react-icons/fa";
 import Header from "../../../Component/Header";
 import Eyebtn from "../../../Component/User/Eyebtn";
+import { ApiError, StaffService } from "../../../lib/api";
+import { getDashboardRoute, setCurrentUser, setToken, USER_TYPES } from "../../../lib/auth";
 
 const SignIn = () => {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showEye, setShowEye] = useState(false);
   const [errors, setErrors] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
   const eyeToggle = (e) => {
     e.preventDefault();
@@ -18,10 +23,10 @@ const SignIn = () => {
   const validate = () => {
     const newErrors = {};
 
-    if (!username.trim()) {
-      newErrors.username = "Username is required";
-    } else if (username.length < 3) {
-      newErrors.username = "Username must be at least 3 characters";
+    if (!email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!/\S+@\S+\.\S+/.test(email)) {
+      newErrors.email = "Email is invalid";
     }
 
     if (!password.trim()) {
@@ -34,12 +39,49 @@ const SignIn = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (validate()) {
-      console.log("✅ Username:", username);
-      console.log("✅ Password:", password);
-      alert("Login successful!");
+    setErrors({});
+
+    if (!validate()) {
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const response = await StaffService.login({ email, password });
+      
+      // The API returns { message: 'Login successful', data: {...}, token: '...' }
+      // And baseFetch wraps it in { data: {...} }
+      if (response.data && response.data.data && response.data.token) {
+        // Set user data in localStorage
+        setCurrentUser(response.data.data, USER_TYPES.STAFF);
+        
+        // Store token
+        setToken(response.data.token);
+        
+        alert("Login successful!");
+        
+        // Redirect to staff dashboard
+        window.location.href = getDashboardRoute(USER_TYPES.STAFF);
+      } else {
+        throw new Error("Invalid response format from server");
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      let errorMessage = "Login failed. Please try again.";
+      
+      if (error instanceof ApiError) {
+        errorMessage = error.message || "Invalid credentials";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      setErrors({ general: errorMessage });
+      alert(errorMessage);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -65,24 +107,30 @@ const SignIn = () => {
               onSubmit={handleSubmit}
               className="space-y-6 mt-6"
             >
+              {errors.general && (
+                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                  {errors.general}
+                </div>
+              )}
               <div>
                 <label
-                  htmlFor="username"
+                  htmlFor="email"
                   className="block text-sm font-medium text-gray-300"
                 >
-                  Username
+                  Email
                 </label>
                 <input
-                  id="username"
-                  name="username"
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  id="email"
+                  name="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="mt-1 block w-full px-4 py-2 border border-gray-600 rounded-md bg-[#1e1e26] text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 sm:text-sm"
-                  placeholder="Enter your username"
+                  placeholder="Enter your email"
+                  disabled={isLoading}
                 />
-                {errors.username && (
-                  <p className="mt-1 text-sm text-red-500">{errors.username}</p>
+                {errors.email && (
+                  <p className="mt-1 text-sm text-red-500">{errors.email}</p>
                 )}
               </div>
 
@@ -102,6 +150,7 @@ const SignIn = () => {
                     onChange={(e) => setPassword(e.target.value)}
                     className="block w-full px-4 py-2 border border-gray-600 rounded-md bg-[#1e1e26] text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 sm:text-sm"
                     placeholder="Enter your password"
+                    disabled={isLoading}
                   />
                   <Eyebtn showEye={showEye} eyeToggle={eyeToggle} />
                 </div>
@@ -131,9 +180,10 @@ const SignIn = () => {
               <div>
                 <button
                   type="submit"
-                  className="w-full flex justify-center py-2 px-4 text-sm font-semibold rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all"
+                  disabled={isLoading}
+                  className="w-full flex justify-center py-2 px-4 text-sm font-semibold rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Sign In
+                  {isLoading ? "Signing In..." : "Sign In"}
                 </button>
               </div>
             </form>

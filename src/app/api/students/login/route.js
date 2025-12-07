@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
-import { NextResponse } from 'next/server';
 import bcrypt from 'bcrypt';
+import { NextResponse } from 'next/server';
 
 // POST /api/students/login - Student login
 export async function POST(request) {
@@ -51,6 +51,8 @@ export async function POST(request) {
       },
     });
 
+    console.log("what is response on student login route", student);
+
     if (!student) {
       return NextResponse.json(
         { error: 'Invalid credentials' },
@@ -85,12 +87,16 @@ export async function POST(request) {
     // Return student data (without password)
     const { password: _, ...studentData } = student;
 
+    // Generate token (simple token generation - in production use JWT)
+    const token = `student_${student.id}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
     return NextResponse.json({
       message: 'Login successful',
       data: {
         ...studentData,
         userType: 'student',
       },
+      token,
     });
   } catch (error) {
     console.error('Error during student login:', error);

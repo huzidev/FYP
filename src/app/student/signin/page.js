@@ -52,8 +52,8 @@ const SignIn = () => {
     if (validate()) {
       try {
         // Import StudentService and auth utilities
-        const { StudentService } = await import("../../../lib/api");
-        const { setCurrentUser, getDashboardRoute, USER_TYPES } = await import("../../../lib/auth");
+        const { StudentService, ApiError } = await import("../../../lib/api");
+        const { setCurrentUser, setToken, getDashboardRoute, USER_TYPES } = await import("../../../lib/auth");
         
         const credentials = {
           email: username,
@@ -62,22 +62,35 @@ const SignIn = () => {
         
         const response = await StudentService.login(credentials);
         
-        if (response.data) {
+        // The API returns { message: 'Login successful', data: {...}, token: '...' }
+        // And baseFetch wraps it in { data: {...} }
+        // So we need response.data.data to get the actual student data
+        if (response.data && response.data.data && response.data.token) {
           // Set user data in localStorage
-          setCurrentUser(response.data, USER_TYPES.STUDENT);
+          setCurrentUser(response.data.data, USER_TYPES.STUDENT);
           
-          // Generate and store a simple token
-          const token = `token_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-          localStorage.setItem('token', token);
+          // Store token from API response
+          setToken(response.data.token);
           
           alert("Login successful!");
           
           // Redirect to student dashboard
           window.location.href = getDashboardRoute(USER_TYPES.STUDENT);
+        } else {
+          throw new Error("Invalid response format from server");
         }
       } catch (error) {
         console.error("Login error:", error);
-        alert("Login failed: " + (error.message || "Invalid credentials"));
+        let errorMessage = "Login failed. Please try again.";
+        
+        if (error instanceof ApiError) {
+          errorMessage = error.message || "Invalid credentials";
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+        
+        setErrors({ general: errorMessage });
+        alert(errorMessage);
       }
     }
   };
@@ -104,6 +117,11 @@ const SignIn = () => {
               onSubmit={handleSubmit}
               className="space-y-6 mt-6"
             >
+              {errors.general && (
+                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                  {errors.general}
+                </div>
+              )}
               <div>
                 <label
                   htmlFor="username"

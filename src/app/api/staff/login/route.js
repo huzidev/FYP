@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
-import { NextResponse } from 'next/server';
 import bcrypt from 'bcrypt';
+import { NextResponse } from 'next/server';
 
 // POST /api/staff/login - Staff login
 export async function POST(request) {
@@ -63,12 +63,16 @@ export async function POST(request) {
     // Return staff data (without password)
     const { password: _, ...staffData } = staff;
 
+    // Generate token (simple token generation - in production use JWT)
+    const token = `staff_${staff.id}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
     return NextResponse.json({
       message: 'Login successful',
       data: {
         ...staffData,
         userType: 'staff',
       },
+      token,
     });
   } catch (error) {
     console.error('Error during staff login:', error);

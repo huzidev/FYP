@@ -187,10 +187,46 @@ export const isAuthenticated = () => {
  */
 export const getDashboardRoute = (userType) => {
   const dashboardRoutes = {
-    [USER_TYPES.ADMIN]: '/admin/admin-page/dashboard',
+    [USER_TYPES.ADMIN]: '/admin/dashboard',
     [USER_TYPES.STAFF]: '/staff/dashboard', // You may need to create this
     [USER_TYPES.STUDENT]: '/student/dashboard', // You may need to create this
   };
   
   return dashboardRoutes[userType] || '/';
+};
+
+/**
+ * Check if user has required role for route access
+ */
+export const requireRole = (requiredRole) => {
+  if (typeof window === 'undefined') return false;
+  
+  const user = getCurrentUser();
+  const token = getToken();
+  
+  if (!user || !token) {
+    return false;
+  }
+  
+  return user.userType === requiredRole;
+};
+
+/**
+ * Verify token and role for protected routes
+ */
+export const verifyAuth = (requiredRole) => {
+  if (typeof window === 'undefined') return { valid: false, user: null };
+  
+  const user = getCurrentUser();
+  const token = getToken();
+  
+  if (!user || !token) {
+    return { valid: false, user: null };
+  }
+  
+  if (requiredRole && user.userType !== requiredRole) {
+    return { valid: false, user };
+  }
+  
+  return { valid: true, user };
 };
