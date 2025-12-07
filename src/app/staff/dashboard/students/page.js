@@ -1,25 +1,18 @@
 "use client";
 
 import AddStudentForm from "@/Component/Admin/Common/addUserForm";
-import BulkFileUpload from "@/Component/Admin/Common/bulkFileUpload";
 import StudentsTable from "@/Component/Admin/Student/StudentsTable";
 import Modal from "@/Component/Common/Modal";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-export default function StudentsPage() {
+export default function StaffStudentsPage() {
   const [isAddUploadOpen, setIsAddUploadOpen] = useState(false);
-  const [isBulkUploadOpen, setBulkUploadOpen] = useState(false);
-  const [isBulkUpdateOpen, setIsBulkUpdateOpen] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [formKey, setFormKey] = useState(0);
-  const router = useRouter();
 
   const handleClose = () => {
     setIsAddUploadOpen(false);
-    setBulkUploadOpen(false);
-    setIsBulkUpdateOpen(false);
     setShowSuccess(false);
   };
 
@@ -33,17 +26,6 @@ export default function StudentsPage() {
     setShowSuccess(false);
     // Reset form by incrementing key
     setFormKey(prev => prev + 1);
-  };
-
-  const handleBulkSubmit = (file, mode) => {
-    console.log("handle submit fx calling in student page");
-    console.log("file data in array ", file, "mode", mode);
-
-    // TODO: Implement bulk upload/update
-    file.map((item) => {
-      console.log("see item", item);
-      // calling api
-    });
   };
 
   return (
@@ -64,7 +46,7 @@ export default function StudentsPage() {
         </div>
       </div>
 
-      {/* Modals */}
+      {/* Modal */}
       <Modal 
         isOpen={isAddUploadOpen} 
         onClose={handleClose} 
@@ -99,28 +81,6 @@ export default function StudentsPage() {
             onCancel={handleClose}
           />
         )}
-      </Modal>
-
-      <Modal
-        isOpen={isBulkUploadOpen}
-        onClose={handleClose}
-        title="Upload File for Bulk Upload"
-      >
-        <BulkFileUpload
-          mode="upload"
-          onSubmit={(file) => handleBulkSubmit(file, "upload")}
-        />
-      </Modal>
-
-      <Modal
-        isOpen={isBulkUpdateOpen}
-        onClose={handleClose}
-        title="Upload File for Bulk Update"
-      >
-        <BulkFileUpload
-          mode="update"
-          onSubmit={(file) => handleBulkSubmit(file, "update")}
-        />
       </Modal>
 
       {/* Students Table */}

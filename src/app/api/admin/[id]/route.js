@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
-import { NextResponse } from 'next/server';
 import bcrypt from 'bcrypt';
+import { NextResponse } from 'next/server';
 
 // GET /api/admin/[id] - Get admin by ID
 export async function GET(request, { params }) {

@@ -158,13 +158,13 @@ export default function StudentsTable() {
                   <td className="border border-gray-600 px-4 py-2">
                     <div className="flex space-x-2">
                       <button
-                        onClick={() => router.push(`/admin/dashboard/students/${student.id}`)}
+                        onClick={() => router.push(`/students/profile/${student.id}`)}
                         className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
                       >
                         View
                       </button>
                       <button
-                        onClick={() => router.push(`/admin/dashboard/students/${student.id}/edit`)}
+                        onClick={() => router.push(`/students/edit/${student.id}`)}
                         className="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-sm"
                       >
                         Edit

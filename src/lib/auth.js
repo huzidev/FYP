@@ -188,8 +188,8 @@ export const isAuthenticated = () => {
 export const getDashboardRoute = (userType) => {
   const dashboardRoutes = {
     [USER_TYPES.ADMIN]: '/admin/dashboard',
-    [USER_TYPES.STAFF]: '/staff/dashboard', // You may need to create this
-    [USER_TYPES.STUDENT]: '/student/dashboard', // You may need to create this
+    [USER_TYPES.STAFF]: '/staff/dashboard',
+    [USER_TYPES.STUDENT]: '/student/dashboard',
   };
   
   return dashboardRoutes[userType] || '/';

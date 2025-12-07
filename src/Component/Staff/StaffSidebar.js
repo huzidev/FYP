@@ -4,16 +4,13 @@ import { logout } from "@/lib/auth";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
-const AdminSidebar = () => {
+const StaffSidebar = () => {
   const pathname = usePathname();
   const router = useRouter();
 
   const pageItems = [
-    { name: "Dashboard", path: "/admin/dashboard" },
+    { name: "Dashboard", path: "/staff/dashboard" },
     { name: "Students", path: "/students" },
-    { name: "Staff", path: "/staff" },
-    { name: "Admins", path: "/admins" },
-    { name: "Courses", path: "/admin/dashboard/courses" },
   ];
 
   const handleLogout = () => {
@@ -25,7 +22,7 @@ const AdminSidebar = () => {
     <div className="h-screen w-64 bg-[#1d1d24] text-white flex flex-col shadow-lg border-r border-[#25252b]">
       {/* Logo */}
       <div className="flex items-center justify-center h-20 border-b border-[#25252b]">
-        <h1 className="text-2xl font-bold text-indigo-400">Admin Panel</h1>
+        <h1 className="text-2xl font-bold text-indigo-400">Staff Panel</h1>
       </div>
 
       {/* Menu Items */}
@@ -58,4 +55,4 @@ const AdminSidebar = () => {
   );
 };
 
-export default AdminSidebar;
+export default StaffSidebar;

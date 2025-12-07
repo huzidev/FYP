@@ -131,11 +131,7 @@ function AddUserForm({ userType = 'student', onSuccess, onCancel }) {
         response = await StaffService.create(submitData);
       }
 
-      if (onSuccess) {
-        onSuccess(response.data);
-      }
-
-      // Reset form
+      // Reset form first
       setFormData({
         fullName: '',
         email: '',
@@ -154,6 +150,14 @@ function AddUserForm({ userType = 'student', onSuccess, onCancel }) {
         salary: '',
         hireDate: '',
       });
+
+      // Clear errors
+      setErrors({});
+
+      // Call success callback
+      if (onSuccess) {
+        onSuccess(response.data);
+      }
 
     } catch (error) {
       console.error('Error creating user:', error);

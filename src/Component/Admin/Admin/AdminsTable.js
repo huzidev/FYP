@@ -154,7 +154,7 @@ export default function AdminsTable() {
                     <div className="flex space-x-2">
                       {admin.id === currentUser?.id ? (
                         <button
-                          onClick={() => router.push(`/admin/dashboard/admins/${admin.id}`)}
+                          onClick={() => router.push(`/admins/profile/${admin.id}`)}
                           className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
                         >
                           View Profile
@@ -162,14 +162,14 @@ export default function AdminsTable() {
                       ) : (
                         <>
                           <button
-                            onClick={() => router.push(`/admin/dashboard/admins/${admin.id}`)}
+                            onClick={() => router.push(`/admins/profile/${admin.id}`)}
                             className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
                           >
                             View
                           </button>
                           {canEdit(admin) && (
                             <button
-                              onClick={() => router.push(`/admin/dashboard/admins/${admin.id}/edit`)}
+                              onClick={() => router.push(`/admins/edit/${admin.id}`)}
                               className="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-sm"
                             >
                               Edit

@@ -1,6 +1,8 @@
 "use client";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ApiError, StaffService } from "../../../lib/api";
+import ConfirmModal from "../../Common/ConfirmModal";
 
 export default function StaffTable() {
   const [staff, setStaff] = useState([]);
@@ -10,6 +12,8 @@ export default function StaffTable() {
   const [selectedRole, setSelectedRole] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState({});
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, member: null });
+  const router = useRouter();
 
   const fetchStaff = async (page = 1, search = "", role = "") => {
     try {
@@ -53,6 +57,19 @@ export default function StaffTable() {
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
+  };
+
+  const handleDelete = async () => {
+    if (!deleteModal.member) return;
+    
+    try {
+      await StaffService.delete(deleteModal.member.id);
+      fetchStaff(currentPage, searchTerm, selectedRole);
+      setDeleteModal({ isOpen: false, member: null });
+    } catch (err) {
+      console.error("Error deleting staff:", err);
+      alert("Failed to delete staff member");
+    }
   };
 
   if (loading && staff.length === 0) {
@@ -139,13 +156,22 @@ export default function StaffTable() {
                   </td>
                   <td className="border border-gray-600 px-4 py-2">
                     <div className="flex space-x-2">
-                      <button className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm">
+                      <button
+                        onClick={() => router.push(`/staff/profile/${member.id}`)}
+                        className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
+                      >
                         View
                       </button>
-                      <button className="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-sm">
+                      <button
+                        onClick={() => router.push(`/staff/edit/${member.id}`)}
+                        className="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-sm"
+                      >
                         Edit
                       </button>
-                      <button className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm">
+                      <button
+                        onClick={() => setDeleteModal({ isOpen: true, member })}
+                        className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
+                      >
                         Delete
                       </button>
                     </div>
@@ -197,6 +223,17 @@ export default function StaffTable() {
           <div className="text-sm text-gray-400">Updating...</div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false, member: null })}
+        onConfirm={handleDelete}
+        title="Delete Staff Member"
+        message={`Are you sure you want to delete ${deleteModal.member?.fullName}? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+      />
     </div>
   );
 }
