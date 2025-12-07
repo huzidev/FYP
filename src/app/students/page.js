@@ -1,12 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import AddStudentForm from "@/Component/Admin/Common/addUserForm";
-import Modal from "@/Component/Common/Modal";
 import StudentsTable from "@/Component/Admin/Student/StudentsTable";
+import Modal from "@/Component/Common/Modal";
 import { verifyAuth } from "@/lib/auth";
-import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export default function StudentsPage() {
   const [isAddUploadOpen, setIsAddUploadOpen] = useState(false);
@@ -102,7 +101,6 @@ export default function StudentsPage() {
           <div className="bg-[#2d2d39] rounded-xl p-6 border border-[#25252b]">
             <StudentsTable key={refreshKey} />
           </div>
-        </div>
     </div>
   );
 }
