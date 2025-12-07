@@ -1,6 +1,6 @@
 "use client";
-import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import Header from "../../../Component/Header";
 
 const StudentDashboard = () => {
@@ -14,7 +14,7 @@ const StudentDashboard = () => {
         const { isAuthenticated, getCurrentUser, USER_TYPES } = await import("../../../lib/auth");
         
         if (!isAuthenticated()) {
-          router.push("/user/signin");
+          router.push("/student/signin");
           return;
         }
 
@@ -28,7 +28,7 @@ const StudentDashboard = () => {
         setLoading(false);
       } catch (error) {
         console.error("Error loading student data:", error);
-        router.push("/user/signin");
+        router.push("/student/signin");
       }
     };
 

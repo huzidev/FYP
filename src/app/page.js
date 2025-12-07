@@ -1,7 +1,7 @@
 "use client";
 import Navbar from "@/Component/Nav";
 import Link from "next/link";
-import React, { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 
 const Page = () => {
   const announcements = [
@@ -23,7 +23,6 @@ const Page = () => {
   ];
 
   const [current, setCurrent] = useState(0);
-  const [showOptions, setShowOptions] = useState(false);
 
   useEffect(() => {
     // Check if user is authenticated and redirect to appropriate dashboard
@@ -60,36 +59,28 @@ const Page = () => {
           attendance, and more. Designed to simplify academic administration.
         </p>
 
-        <div className="relative">
-          <button
-            onClick={() => setShowOptions(!showOptions)}
-            className="px-8 py-4 bg-black hover:bg-gray-800 rounded-lg text-lg font-semibold transition"
-          >
-            Login to Portal
-          </button>
-
-          {showOptions && (
-            <div className="absolute left-0 right-0 mt-2 bg-[#2f2f37] rounded-lg shadow-lg p-0 flex flex-col divide-y divide-gray-600">
-              <Link
-                href="/admission/signin"
-                className="px-6 py-3 text-white font-semibold hover:bg-[#3a3a42] transition"
-              >
-                Admission Login
-              </Link>
-              <Link
-                href="/user/signin"
-                className="px-6 py-3 text-white font-semibold hover:bg-[#3a3a42] transition"
-              >
-                Student Login
-              </Link>
-              <Link
-                href="/admin/signin"
-                className="px-6 py-3 text-white font-semibold hover:bg-[#3a3a42] transition"
-              >
-                Admin Login
-              </Link>
-            </div>
-          )}
+        <div className="flex flex-col items-center gap-4">
+          <h2 className="text-2xl font-semibold mb-2">Login to</h2>
+          <div className="flex flex-col gap-3 w-full max-w-xs">
+            <Link
+              href="/admin/signin"
+              className="px-8 py-4 bg-black hover:bg-gray-800 rounded-lg text-lg font-semibold transition text-center"
+            >
+              Admin
+            </Link>
+            <Link
+              href="/staff/signin"
+              className="px-8 py-4 bg-black hover:bg-gray-800 rounded-lg text-lg font-semibold transition text-center"
+            >
+              Staff
+            </Link>
+            <Link
+              href="/student/signin"
+              className="px-8 py-4 bg-black hover:bg-gray-800 rounded-lg text-lg font-semibold transition text-center"
+            >
+              Student
+            </Link>
+          </div>
         </div>
       </section>
 

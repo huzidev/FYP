@@ -140,8 +140,8 @@ export const redirectToLogin = (userType = '') => {
   
   const loginRoutes = {
     [USER_TYPES.ADMIN]: '/admin/signin',
-    [USER_TYPES.STAFF]: '/admission/signin',
-    [USER_TYPES.STUDENT]: '/user/signin',
+    [USER_TYPES.STAFF]: '/staff/signin',
+    [USER_TYPES.STUDENT]: '/student/signin',
   };
   
   const route = loginRoutes[userType] || '/';

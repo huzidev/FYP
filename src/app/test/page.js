@@ -1,6 +1,6 @@
 "use client";
-import { useState, useEffect } from "react";
-import { DepartmentService, StudentService, ApiError } from "../../lib/api";
+import { useEffect, useState } from "react";
+import { ApiError, DepartmentService, StudentService } from "../../lib/api";
 
 export default function TestAPIPage() {
   const [departments, setDepartments] = useState([]);
@@ -111,7 +111,7 @@ export default function TestAPIPage() {
               <div><strong>Student:</strong> alice.student@university.edu / student123</div>
             </div>
             <div className="mt-2 text-xs">
-              Go to <strong>/admin/signin</strong>, <strong>/admission/signin</strong>, or <strong>/user/signin</strong> to test login.
+              Go to <strong>/admin/signin</strong>, <strong>/staff/signin</strong>, or <strong>/student/signin</strong> to test login.
             </div>
           </div>
 

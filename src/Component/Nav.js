@@ -1,7 +1,6 @@
 "use client";
-import { useState } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { useState } from "react";
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
@@ -38,14 +37,14 @@ export default function Navbar() {
                 Admin
               </Link>
               <Link
-                href="/admission/signin"
+                href="/staff/signin"
                 className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
                 onClick={() => setOpen(false)}
               >
-                Admission
+                Staff
               </Link>
               <Link
-                href="/user/signin"
+                href="/student/signin"
                 className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
                 onClick={() => setOpen(false)}
               >
