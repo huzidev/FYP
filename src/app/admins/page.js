@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 import AdminsTable from "@/Component/Admin/Admin/AdminsTable";
 import { verifyAuth } from "@/lib/auth";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 export default function AdminsPage() {
   const router = useRouter();
@@ -33,7 +33,6 @@ export default function AdminsPage() {
           <div className="bg-[#2d2d39] rounded-xl p-6 border border-[#25252b]">
             <AdminsTable />
           </div>
-        </div>
     </div>
   );
 }
