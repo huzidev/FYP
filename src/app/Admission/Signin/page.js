@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import { useState } from "react";
 import { FaUserCircle } from "react-icons/fa";
 import Header from "../../../Component/Header";
 import Eyebtn from "../../../Component/User/Eyebtn";
