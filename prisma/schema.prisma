@@ -59,30 +59,35 @@ enum StaffRole {
 
 // ==================== STUDENT ====================
 model Student {
-  id            Int          @id @default(autoincrement())
-  fullName      String
-  email         String       @unique
-  password      String
-  studentId     String       @unique
-  level         StudentLevel // <--- BACHELOR or MASTER
-  gender        Gender?
-  phone         String?
-  address       String?
-  dateOfBirth   DateTime?
-  fatherName    String?
-  cnic          String?      @unique
-  admissionDate DateTime?
-  isActive      Boolean      @default(true)
-  lastLoginAt   DateTime?
-  department    Department   @relation(fields: [departmentId], references: [id])
-  departmentId  Int
-  fees          Fee?
-  enrollments   Enrollment[]
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  id              Int          @id @default(autoincrement())
+  fullName        String
+  email           String       @unique
+  password        String
+  studentId       String       @unique
+  level           StudentLevel
+  gender          Gender?
+  phone           String?
+  address         String?
+  dateOfBirth     DateTime?
+  fatherName      String?
+  cnic            String?      @unique
+  admissionDate   DateTime?
+  isActive        Boolean      @default(true)
+  lastLoginAt     DateTime?
+
+  resetOtp        String?
+  resetOtpExpiry  DateTime?
+
+  department      Department   @relation(fields: [departmentId], references: [id])
+  departmentId    Int
+  fees            Fee?
+  enrollments     Enrollment[]
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 
   @@map("students")
 }
+
 
 enum StudentLevel {
   BACHELOR
