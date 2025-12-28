@@ -11,11 +11,13 @@ const SignIn = () => {
   const [showEye, setShowEye] = useState(false);
   const [errors, setErrors] = useState({});
   const router = useRouter();
-  
+
   useEffect(() => {
     // Check if user is already logged in
     const checkAuth = async () => {
-      const { isAuthenticated, getDashboardRoute, USER_TYPES } = await import("../../../lib/auth");
+      const { isAuthenticated, getDashboardRoute, USER_TYPES } = await import(
+        "../../../lib/auth"
+      );
       if (isAuthenticated()) {
         router.push(getDashboardRoute(USER_TYPES.STUDENT));
       }
@@ -53,27 +55,28 @@ const SignIn = () => {
       try {
         // Import StudentService and auth utilities
         const { StudentService, ApiError } = await import("../../../lib/api");
-        const { setCurrentUser, setToken, getDashboardRoute, USER_TYPES } = await import("../../../lib/auth");
-        
+        const { setCurrentUser, setToken, getDashboardRoute, USER_TYPES } =
+          await import("../../../lib/auth");
+
         const credentials = {
           email: username,
           password: password,
         };
-        
+
         const response = await StudentService.login(credentials);
-        
+
         // The API returns { message: 'Login successful', data: {...}, token: '...' }
         // And baseFetch wraps it in { data: {...} }
         // So we need response.data.data to get the actual student data
         if (response.data && response.data.data && response.data.token) {
           // Set user data in localStorage
           setCurrentUser(response.data.data, USER_TYPES.STUDENT);
-          
+
           // Store token from API response
           setToken(response.data.token);
-          
+
           alert("Login successful!");
-          
+
           // Redirect to student dashboard
           window.location.href = getDashboardRoute(USER_TYPES.STUDENT);
         } else {
@@ -82,13 +85,13 @@ const SignIn = () => {
       } catch (error) {
         console.error("Login error:", error);
         let errorMessage = "Login failed. Please try again.";
-        
+
         if (error instanceof ApiError) {
           errorMessage = error.message || "Invalid credentials";
         } else if (error.message) {
           errorMessage = error.message;
         }
-        
+
         setErrors({ general: errorMessage });
         alert(errorMessage);
       }
@@ -113,10 +116,7 @@ const SignIn = () => {
               <FaUserCircle className="text-indigo-400" size={50} />
             </div>
 
-            <form
-              onSubmit={handleSubmit}
-              className="space-y-6 mt-6"
-            >
+            <form onSubmit={handleSubmit} className="space-y-6 mt-6">
               {errors.general && (
                 <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
                   {errors.general}
@@ -169,8 +169,8 @@ const SignIn = () => {
 
               <div className="text-center">
                 <a
-                  href="#"
-                  className="text-sm text-indigo-400 hover:text-indigo-300 transition"
+                  href="/student/forgot-password"
+                  className="text-sm text-indigo-400"
                 >
                   Forgot password?
                 </a>
@@ -178,8 +178,8 @@ const SignIn = () => {
                 or
                 <br />
                 <a
-                  href="#"
-                  className="text-sm text-indigo-400 hover:text-indigo-300 transition"
+                  href="/student/change-password"
+                  className="text-sm text-indigo-400"
                 >
                   Change Password
                 </a>

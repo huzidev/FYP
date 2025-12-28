@@ -51,17 +51,17 @@ const SignIn = () => {
 
     try {
       const response = await AdminService.login({ email, password });
-      
+
       // The API returns { message: 'Login successful', data: {...}, token: '...' }
       // And baseFetch wraps it in { data: {...} }
       if (response.data && response.data.data && response.data.token) {
         // Store user data using auth utility
         setCurrentUser(response.data.data, USER_TYPES.ADMIN);
-        
+
         // Store token
         const { setToken } = await import("../../../lib/auth");
         setToken(response.data.token);
-        
+
         // Redirect after successful login
         router.push("/admin/dashboard");
       } else {
@@ -69,7 +69,7 @@ const SignIn = () => {
       }
     } catch (error) {
       console.error("Login error:", error);
-      
+
       if (error instanceof ApiError) {
         setErrors({ general: error.message });
       } else {
@@ -98,10 +98,7 @@ const SignIn = () => {
               <FaUserCircle className="text-indigo-400" size={50} />
             </div>
 
-            <form
-              onSubmit={handleSubmit}
-              className="space-y-6 mt-6"
-            >
+            <form onSubmit={handleSubmit} className="space-y-6 mt-6">
               {errors.general && (
                 <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
                   {errors.general}
@@ -157,8 +154,8 @@ const SignIn = () => {
 
               <div className="text-center">
                 <a
-                  href="#"
-                  className="text-sm text-indigo-400 hover:text-indigo-300 transition"
+                  href="/admin/forgot-password"
+                  className="text-sm text-indigo-400"
                 >
                   Forgot password?
                 </a>
@@ -166,7 +163,7 @@ const SignIn = () => {
                 or
                 <br />
                 <a
-                  href="#"
+                  href="/admin/change-password"
                   className="text-sm text-indigo-400 hover:text-indigo-300 transition"
                 >
                   Change Password

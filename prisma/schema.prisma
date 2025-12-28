@@ -1,5 +1,3 @@
-// schema.prisma
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -9,7 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ==================== ADMIN ====================
 model Admin {
   id          Int       @id @default(autoincrement())
   fullName    String
@@ -26,12 +23,6 @@ model Admin {
   @@map("admins")
 }
 
-enum AdminRole {
-  ADMIN
-  SUPER_ADMIN
-}
-
-// ==================== STAFF ====================
 model Staff {
   id          Int       @id @default(autoincrement())
   fullName    String
@@ -45,124 +36,93 @@ model Staff {
   hireDate    DateTime?
   isActive    Boolean   @default(true)
   lastLoginAt DateTime?
-  subjects    Subject[] @relation("TeacherSubjects")
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  subjects    Subject[] @relation("TeacherSubjects")
 
   @@map("staff")
 }
 
-enum StaffRole {
-  ADMISSION
-  TEACHER
-}
-
-// ==================== STUDENT ====================
 model Student {
-  id              Int          @id @default(autoincrement())
-  fullName        String
-  email           String       @unique
-  password        String
-  studentId       String       @unique
-  level           StudentLevel
-  gender          Gender?
-  phone           String?
-  address         String?
-  dateOfBirth     DateTime?
-  fatherName      String?
-  cnic            String?      @unique
-  admissionDate   DateTime?
-  isActive        Boolean      @default(true)
-  lastLoginAt     DateTime?
-
-  resetOtp        String?
-  resetOtpExpiry  DateTime?
-
-  department      Department   @relation(fields: [departmentId], references: [id])
-  departmentId    Int
-  fees            Fee?
-  enrollments     Enrollment[]
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  id             Int          @id @default(autoincrement())
+  fullName       String
+  email          String       @unique
+  password       String
+  studentId      String       @unique
+  level          StudentLevel
+  gender         Gender?
+  phone          String?
+  address        String?
+  dateOfBirth    DateTime?
+  fatherName     String?
+  cnic           String?      @unique
+  admissionDate  DateTime?
+  isActive       Boolean      @default(true)
+  lastLoginAt    DateTime?
+  departmentId   Int
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  resetOtp       String?
+  resetOtpExpiry DateTime?
+  enrollments    Enrollment[]
+  fees           Fee?
+  department     Department   @relation(fields: [departmentId], references: [id])
 
   @@map("students")
 }
 
-
-enum StudentLevel {
-  BACHELOR
-  MASTER
-}
-
-enum Gender {
-  MALE
-  FEMALE
-  OTHER
-}
-
-// ==================== DEPARTMENT ====================
 model Department {
   id          Int       @id @default(autoincrement())
   name        String    @unique
   code        String    @unique
   description String?
   isActive    Boolean   @default(true)
-  students    Student[]
-  subjects    Subject[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  students    Student[]
+  subjects    Subject[]
 
   @@map("departments")
 }
 
-// ==================== SUBJECT ====================
 model Subject {
-  id            Int          @id @default(autoincrement())
-  name          String
-  code          String       @unique
-  description   String?
-  creditHours   Int          @default(3)
-  semester      Int?
-  level         StudentLevel?
-  isActive      Boolean      @default(true)
-  department    Department   @relation(fields: [departmentId], references: [id])
-  departmentId  Int
-  teachers      Staff[]      @relation("TeacherSubjects")
-  enrollments   Enrollment[]
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  id           Int           @id @default(autoincrement())
+  name         String
+  code         String        @unique
+  description  String?
+  creditHours  Int           @default(3)
+  semester     Int?
+  level        StudentLevel?
+  isActive     Boolean       @default(true)
+  departmentId Int
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  enrollments  Enrollment[]
+  department   Department    @relation(fields: [departmentId], references: [id])
+  teachers     Staff[]       @relation("TeacherSubjects")
 
   @@map("subjects")
 }
 
-// ==================== ENROLLMENT ====================
 model Enrollment {
   id           Int              @id @default(autoincrement())
-  student      Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
   studentId    Int
-  subject      Subject          @relation(fields: [subjectId], references: [id], onDelete: Cascade)
   subjectId    Int
   semester     String?
   academicYear String?
   status       EnrollmentStatus @default(ACTIVE)
-  grade        Grade?
   createdAt    DateTime         @default(now())
   updatedAt    DateTime         @updatedAt
+  student      Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  subject      Subject          @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  grade        Grade?
 
   @@unique([studentId, subjectId, semester, academicYear])
   @@map("enrollments")
 }
 
-enum EnrollmentStatus {
-  ACTIVE
-  DROPPED
-  COMPLETED
-}
-
-// ==================== GRADE ====================
 model Grade {
   id           Int        @id @default(autoincrement())
-  enrollment   Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
   enrollmentId Int        @unique
   marks        Float?
   totalMarks   Float      @default(100)
@@ -170,15 +130,15 @@ model Grade {
   letterGrade  String?
   gpa          Float?
   semester     String?
-  examType     String?    // Midterm, Final, Assignment, etc.
+  examType     String?
   remarks      String?
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
+  enrollment   Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
 
   @@map("grades")
 }
 
-// ==================== FEE ====================
 model Fee {
   id            Int       @id @default(autoincrement())
   amount        Float
@@ -191,22 +151,14 @@ model Fee {
   paidDate      DateTime?
   description   String?
   receiptNumber String?
-  student       Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
   studentId     Int       @unique
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+  student       Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@map("fees")
 }
 
-enum FeeStatus {
-  PENDING
-  PAID
-  PARTIAL
-  OVERDUE
-}
-
-// ==================== ACADEMIC YEAR ====================
 model AcademicYear {
   id        Int      @id @default(autoincrement())
   year      String   @unique
@@ -219,7 +171,6 @@ model AcademicYear {
   @@map("academic_years")
 }
 
-// ==================== SEMESTER ====================
 model Semester {
   id        Int      @id @default(autoincrement())
   name      String   @unique
@@ -230,4 +181,38 @@ model Semester {
   updatedAt DateTime @updatedAt
 
   @@map("semesters")
+}
+
+enum AdminRole {
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum StaffRole {
+  ADMISSION
+  TEACHER
+}
+
+enum StudentLevel {
+  BACHELOR
+  MASTER
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum EnrollmentStatus {
+  ACTIVE
+  DROPPED
+  COMPLETED
+}
+
+enum FeeStatus {
+  PENDING
+  PAID
+  PARTIAL
+  OVERDUE
 }
