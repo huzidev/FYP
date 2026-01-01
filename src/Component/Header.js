@@ -2,6 +2,7 @@
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Logo from "./Logo";
 
 export default function Header() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -30,12 +31,10 @@ export default function Header() {
 
   return (
     <>
-      <header className="w-full bg-[#25252b] px-6 py-4">
-        <div className="flex items-center justify-between">
+      <header className="w-full fixed top-0 left-0 bg-transparent z-50 shadow-sm">
+        <div className="max-w-7xl mx-auto px-6 flex justify-between items-center h-16">
           <Link href="/">
-            <h1 className="text-white cursor-pointer font-extrabold text-2xl">
-              SmiConnect
-            </h1>
+            <Logo width={60} height={50} className="cursor-pointer" />
           </Link>
           
           {isLoggedIn && user && (

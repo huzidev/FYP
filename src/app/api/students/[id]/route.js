@@ -5,7 +5,7 @@ import bcrypt from 'bcrypt';
 // GET /api/students/[id] - Get student by ID
 export async function GET(request, { params }) {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     const student = await prisma.student.findUnique({
       where: { id: parseInt(id) },
@@ -67,7 +67,7 @@ export async function GET(request, { params }) {
 // PUT /api/students/[id] - Update student
 export async function PUT(request, { params }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
     const { 
       fullName, 
@@ -152,7 +152,7 @@ export async function PUT(request, { params }) {
 // DELETE /api/students/[id] - Delete student
 export async function DELETE(request, { params }) {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     // Check if student exists
     const existingStudent = await prisma.student.findUnique({

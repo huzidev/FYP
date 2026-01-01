@@ -11,6 +11,7 @@ export default function StudentsPage() {
   const [isAddUploadOpen, setIsAddUploadOpen] = useState(false);
   const [isBulkUploadOpen, setBulkUploadOpen] = useState(false);
   const [isBulkUpdateOpen, setIsBulkUpdateOpen] = useState(false);
+  const [isDownloadOpen, setIsDownloadOpen] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [formKey, setFormKey] = useState(0);
@@ -54,20 +55,51 @@ export default function StudentsPage() {
           <h1 className="text-3xl font-bold text-white mb-2">Students</h1>
           <p className="text-gray-400">Manage all students</p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex gap-8">
+          <button
+            onClick={() => setIsBulkUpdateOpen(true)}
+            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition"
+          >
+            <span >
+              <img src="/icon/upload-icon.svg" alt="Download" className="w-4 h-4 mr-2 inline-block filter invert brightness-0" />
+              Bulk Update
+
+            </span>
+          </button>
+          <button
+            onClick={() => setBulkUploadOpen(true)}
+            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition"
+          >
+            <span className="text-white">
+              <img src="/icon/upload-icon.svg" alt="Download" className="w-4 h-4 mr-2 inline-block filter invert brightness-0" />
+              Bulk Upload
+            </span>
+          </button>
+
+          {/* //TODO: need to develop :: download all students list with paginated items  */}
+          <button
+            onClick={() => setIsDownloadOpen(true)}
+            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition"
+          >
+            <span >
+              <img src="/icon/download-icon.svg" alt="Download" className="w-4 h-4 mr-2 inline-block filter invert brightness-0" />
+              Download List
+            </span>
+          </button>
           <button
             onClick={() => setIsAddUploadOpen(true)}
             className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition"
           >
             + Create Student
+
           </button>
         </div>
       </div>
 
       {/* Modals */}
-      <Modal 
-        isOpen={isAddUploadOpen} 
-        onClose={handleClose} 
+      <Modal
+        isOpen={isAddUploadOpen}
+        onClose={handleClose}
         title={showSuccess ? "Student Created Successfully" : "Create Student"}
         size="xl"
       >
@@ -92,9 +124,9 @@ export default function StudentsPage() {
             </div>
           </div>
         ) : (
-          <AddStudentForm 
+          <AddStudentForm
             key={formKey}
-            userType="student" 
+            userType="student"
             onSuccess={handleSuccess}
             onCancel={handleClose}
           />
