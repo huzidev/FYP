@@ -5,6 +5,7 @@ import bcrypt from 'bcrypt';
 // GET /api/staff/[id] - Get staff by ID
 export async function GET(request, { params }) {
   try {
+    const { id } = await params;
     const staff = await prisma.staff.findUnique({
       where: { id: parseInt(id) },
       include: {
