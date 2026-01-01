@@ -10,9 +10,9 @@ const AdminSidebar = () => {
 
   const pageItems = [
     { name: "Dashboard", path: "/admin/dashboard" },
-    { name: "Students", path: "/students" },
-    { name: "Staff", path: "/staff" },
-    { name: "Admins", path: "/admins" },
+    { name: "Students", path: "/admin/dashboard/students" },
+    { name: "Staff", path: "/admin/dashboard/staff" },
+    { name: "Admins", path: "/admin/dashboard/admins" },
     { name: "Courses", path: "/admin/dashboard/courses" },
   ];
 
