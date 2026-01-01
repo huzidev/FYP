@@ -9,6 +9,7 @@
     "lint": "next lint",
     "postinstall": "prisma generate",
     "db:seed": "node prisma/seed.js",
+    "db:seed:admin": "SEED_ADMIN_ONLY=true node prisma/seed.js",
     "db:reset": "npx prisma db push --force-reset && npm run db:seed"
   },
   "prisma": {
