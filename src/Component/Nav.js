@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useState } from "react";
+import Logo from "./Logo";
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
@@ -11,9 +12,7 @@ export default function Navbar() {
         {/* Logo */}
         <div className="flex items-center">
           <Link href="/">
-            <h1 className="text-white cursor-pointer font-extrabold text-2xl">
-              SmiConnect
-            </h1>
+            <Logo width={60} height={50} className="cursor-pointer" />
           </Link>
           
         </div>
