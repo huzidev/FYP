@@ -9,7 +9,7 @@ export default function Header() {
 
   useEffect(() => {
     const checkAuthStatus = async () => {
-      if (typeof window !== 'undefined') {
+      if (typeof window !== "undefined") {
         const { isAuthenticated, getCurrentUser } = await import("../lib/auth");
         const authenticated = isAuthenticated();
         setIsLoggedIn(authenticated);
@@ -37,7 +37,7 @@ export default function Header() {
               SmiConnect
             </h1>
           </Link>
-          
+
           {isLoggedIn && user && (
             <div className="flex items-center space-x-4">
               <span className="text-white text-sm">
