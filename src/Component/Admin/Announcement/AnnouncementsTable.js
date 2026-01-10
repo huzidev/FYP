@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { FiEdit, FiTrash2, FiMessageCircle, FiEye } from 'react-icons/fi';
 import ConfirmModal from '@/Component/Common/ConfirmModal';
+import { useEffect, useState } from 'react';
+import { FiEdit, FiEye, FiMessageCircle, FiTrash2 } from 'react-icons/fi';
 
 const AnnouncementsTable = ({ refreshKey, onEdit, onView }) => {
   const [announcements, setAnnouncements] = useState([]);
@@ -208,21 +208,21 @@ const AnnouncementsTable = ({ refreshKey, onEdit, onView }) => {
                         className="text-indigo-600 hover:text-indigo-900 p-1 rounded-full hover:bg-indigo-50"
                         title="View"
                       >
-                        <FiEye className="h-4 w-4" />
+                        <FiEye className="h-4 w-4 cursor-pointer" />
                       </button>
                       <button
                         onClick={() => onEdit(announcement)}
                         className="text-yellow-600 hover:text-yellow-900 p-1 rounded-full hover:bg-yellow-50"
                         title="Edit"
                       >
-                        <FiEdit className="h-4 w-4" />
+                        <FiEdit className="h-4 w-4 cursor-pointer" />
                       </button>
                       <button
                         onClick={() => openDeleteModal(announcement.id, announcement.title)}
                         className="text-red-600 hover:text-red-900 p-1 rounded-full hover:bg-red-50"
                         title="Delete"
                       >
-                        <FiTrash2 className="h-4 w-4" />
+                        <FiTrash2 className="h-4 w-4 cursor-pointer" />
                       </button>
                     </div>
                   </td>

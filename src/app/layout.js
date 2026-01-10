@@ -14,6 +14,10 @@ const geistMono = Geist_Mono({
 export const metadata = {
   title: "SMI Connect",
   description: "Advance CMS portal",
+  icons: {
+    icon: "/smi-connect-icon.jpeg",
+    apple: "/apple-icon.png",
+  },
 };
 
 export default function RootLayout({ children }) {
