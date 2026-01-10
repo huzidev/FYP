@@ -97,6 +97,12 @@ const StudentDashboard = () => {
           <div className="bg-[#2d2d39] rounded-lg p-6 border border-[#25252b]">
             <h3 className="text-lg font-semibold text-white mb-4">Quick Actions</h3>
             <div className="space-y-2">
+              <button 
+                onClick={() => router.push('/student/announcements')}
+                className="w-full text-left px-3 py-2 bg-[#1e1e26] text-gray-300 rounded hover:bg-[#25252b] transition-colors"
+              >
+                View Announcements
+              </button>
               <button className="w-full text-left px-3 py-2 bg-[#1e1e26] text-gray-300 rounded hover:bg-[#25252b] transition-colors">
                 View Grades
               </button>

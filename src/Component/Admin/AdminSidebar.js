@@ -14,6 +14,7 @@ const AdminSidebar = () => {
     { name: "Staff", path: "/admin/dashboard/staff" },
     { name: "Admins", path: "/admin/dashboard/admins" },
     { name: "Courses", path: "/admin/dashboard/courses" },
+    { name: "Announcements", path: "/admin/dashboard/announcements" },
   ];
 
   const handleLogout = () => {
