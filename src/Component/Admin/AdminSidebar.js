@@ -50,7 +50,7 @@ const AdminSidebar = () => {
       <div className="p-5 border-t border-[#25252b]">
         <button
           onClick={handleLogout}
-          className="w-full py-3 px-4 rounded-lg bg-red-600 hover:bg-red-700 text-white transition text-center"
+          className="w-full py-3 px-4 cursor-pointer rounded-lg bg-red-600 hover:bg-red-700 text-white transition text-center"
         >
           Logout
         </button>
