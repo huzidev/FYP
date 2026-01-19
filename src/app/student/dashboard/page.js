@@ -1,7 +1,15 @@
 "use client";
+
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import Header from "../../../Component/Header";
+import {
+  User,
+  BookOpen,
+  CreditCard,
+  Calendar,
+  Info,
+  FileText,
+} from "lucide-react";
 
 const StudentDashboard = () => {
   const [student, setStudent] = useState(null);
@@ -9,157 +17,226 @@ const StudentDashboard = () => {
   const router = useRouter();
 
   useEffect(() => {
-    const checkAuthAndLoadData = async () => {
-      try {
-        const { isAuthenticated, getCurrentUser, USER_TYPES } = await import("../../../lib/auth");
-        
-        if (!isAuthenticated()) {
-          router.push("/student/signin");
-          return;
-        }
+    const load = async () => {
+      const { isAuthenticated, getCurrentUser, USER_TYPES } = await import(
+        "../../../lib/auth"
+      );
 
-        const user = getCurrentUser();
-        if (user.userType !== USER_TYPES.STUDENT) {
-          router.push("/");
-          return;
-        }
-
-        setStudent(user);
-        setLoading(false);
-      } catch (error) {
-        console.error("Error loading student data:", error);
-        router.push("/student/signin");
+      if (!isAuthenticated()) {
+        router.replace("/student/signin");
+        return;
       }
+
+      const user = getCurrentUser();
+      if (!user || user.userType !== USER_TYPES.STUDENT) {
+        router.replace("/student/signin");
+        return;
+      }
+
+      setStudent(user);
+      setLoading(false);
     };
 
-    checkAuthAndLoadData();
+    load();
   }, [router]);
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#1d1d24] flex items-center justify-center">
-        <div className="text-white text-xl">Loading...</div>
+      <div className="flex items-center justify-center min-h-screen text-white">
+        Loading...
       </div>
     );
   }
 
-  if (!student) {
-    return null;
-  }
+  if (!student) return null;
+
+  const generateProgramCode = (departmentName = "") => {
+    if (!departmentName) return "—";
+    const initials = departmentName
+      .split(" ")
+      .map((w) => w[0])
+      .join("")
+      .toUpperCase();
+    return `BS${initials}`;
+  };
+
+  const handleLogout = async () => {
+    localStorage.clear();
+    sessionStorage.clear();
+    setStudent(null);
+    router.replace("/student/signin");
+  };
+
+  const navCards = [
+    {
+      title: "Academic",
+      items: [
+        "Current Courses",
+        "Program Syllabus",
+        "Attendance Report",
+        "Grade History",
+        "PLO/CLO Attainment",
+        "Program Sheet",
+      ],
+      icon: <BookOpen size={18} />,
+    },
+    {
+      title: "Finance",
+      items: ["Student Fee Bill", "Online Fee Payment", "Fee Statement"],
+      icon: <CreditCard size={18} />,
+    },
+    {
+      title: "Resources",
+      items: ["Search KIET Library", "Digital Library", "Book Issued"],
+      icon: <Info size={18} />,
+    },
+    {
+      title: "Admin/Schedule",
+      items: [
+        "Self Registration",
+        "Class Schedule",
+        "Exam Schedule",
+        "Academic Calendar",
+        "Online Clearance",
+      ],
+      icon: <Calendar size={18} />,
+    },
+    {
+      title: "Support & Info",
+      items: [
+        "Alumni Info",
+        "Test Results (Standard & OBE)",
+        "Student Support",
+        "Notifications",
+        "Last 30 Days Emails",
+      ],
+      icon: <FileText size={18} />,
+    },
+  ];
 
   return (
-    <div className="min-h-screen bg-[#1d1d24]">
-      <Header />
-      
-      <div className="container mx-auto px-6 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">
-            Student Dashboard
-          </h1>
-          <p className="text-gray-400">Welcome back, {student.fullName}</p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          {/* Profile Info Card */}
-          <div className="bg-[#2d2d39] rounded-lg p-6 border border-[#25252b]">
-            <h3 className="text-lg font-semibold text-white mb-4">Profile Information</h3>
-            <div className="space-y-2">
-              <p className="text-gray-300"><span className="font-medium">Student ID:</span> {student.studentId}</p>
-              <p className="text-gray-300"><span className="font-medium">Email:</span> {student.email}</p>
-              <p className="text-gray-300"><span className="font-medium">Phone:</span> {student.phone}</p>
-              {student.gender && (
-                <p className="text-gray-300"><span className="font-medium">Gender:</span> {student.gender}</p>
-              )}
-              {student.address && (
-                <p className="text-gray-300"><span className="font-medium">Address:</span> {student.address}</p>
-              )}
-              {student.department && (
-                <p className="text-gray-300"><span className="font-medium">Department:</span> {student.department.name}</p>
-              )}
-            </div>
+    <div className="w-full min-h-screen overflow-x-hidden relative bg-transparent">
+      <div className="text-gray-300 p-4 sm:p-6 space-y-6 max-w-full">
+        {/* User Identity Bar */}
+        <div className="bg-[#2d2d39] rounded-lg p-4 sm:p-6 flex flex-col sm:flex-row gap-4 sm:gap-0 justify-between items-start sm:items-center border border-[#25252b] shadow-md">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold text-white">
+              {student.fullName}
+            </h1>
+            <p className="text-gray-400 text-sm sm:text-base">
+              ID: {student.studentId}
+            </p>
           </div>
 
-          {/* Academic Status Card */}
-          <div className="bg-[#2d2d39] rounded-lg p-6 border border-[#25252b]">
-            <h3 className="text-lg font-semibold text-white mb-4">Academic Status</h3>
-            <div className="space-y-2">
-              <p className="text-gray-300"><span className="font-medium">Status:</span> 
-                <span className={`ml-2 px-2 py-1 rounded text-sm ${student.isActive ? 'bg-green-600' : 'bg-red-600'}`}>
-                  {student.isActive ? 'Active' : 'Inactive'}
-                </span>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
+            <span
+              className={`px-3 py-1 rounded-full font-medium text-xs sm:text-sm text-center ${
+                student.isActive
+                  ? "bg-green-600 text-white"
+                  : "bg-red-600 text-white"
+              }`}
+            >
+              {student.isActive ? "ACTIVE" : "INACTIVE"}
+            </span>
+
+            <button
+              onClick={handleLogout}
+              className="w-full sm:w-auto px-4 py-2 rounded-md bg-red-600 hover:bg-red-700 text-white text-sm font-medium transition"
+            >
+              Logout
+            </button>
+          </div>
+        </div>
+
+        {/* Student Portal Section */}
+        <div className="bg-[#2d2d39] rounded-lg p-4 sm:p-6 border border-[#25252b] shadow-md space-y-4">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-[#1e1e26] flex items-center justify-center">
+              <User size={26} />
+            </div>
+
+            <div className="text-center sm:text-left">
+              <p className="text-white font-semibold">{student.fullName}</p>
+              <p className="text-gray-400 text-sm">{student.email}</p>
+              <p className="text-gray-400 text-sm">
+                Department: {student.department?.name || "—"}
               </p>
-              <p className="text-gray-300"><span className="font-medium">Semester:</span> {student.currentSemester}</p>
-              <p className="text-gray-300"><span className="font-medium">Session:</span> {student.session}</p>
             </div>
           </div>
 
-          {/* Quick Actions Card */}
-          <div className="bg-[#2d2d39] rounded-lg p-6 border border-[#25252b]">
-            <h3 className="text-lg font-semibold text-white mb-4">Quick Actions</h3>
-            <div className="space-y-2">
-              <button 
-                onClick={() => router.push('/student/announcements')}
-                className="w-full text-left px-3 py-2 bg-[#1e1e26] text-gray-300 rounded hover:bg-[#25252b] transition-colors"
-              >
-                View Announcements
-              </button>
-              <button className="w-full text-left px-3 py-2 bg-[#1e1e26] text-gray-300 rounded hover:bg-[#25252b] transition-colors">
-                View Grades
-              </button>
-              <button className="w-full text-left px-3 py-2 bg-[#1e1e26] text-gray-300 rounded hover:bg-[#25252b] transition-colors">
-                Check Fees
-              </button>
-              <button className="w-full text-left px-3 py-2 bg-[#1e1e26] text-gray-300 rounded hover:bg-[#25252b] transition-colors">
-                Update Profile
-              </button>
-            </div>
+          {/* Program Table */}
+          <div className="-mx-4 sm:mx-0 overflow-x-auto overscroll-x-contain">
+            <table className="min-w-[600px] w-full text-sm text-left text-gray-300 border border-[#25252b] rounded-lg">
+              <thead className="bg-[#1e1e26] text-gray-400">
+                <tr>
+                  <th className="px-3 sm:px-4 py-2">Select</th>
+                  <th className="px-3 sm:px-4 py-2">P-Code</th>
+                  <th className="px-3 sm:px-4 py-2">Program</th>
+                  <th className="px-3 sm:px-4 py-2">Grade</th>
+                  <th className="px-3 sm:px-4 py-2">Status</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                <tr className="border-t border-[#25252b] hover:bg-[#1e1e26]/50 transition">
+                  <td className="px-3 sm:px-4 py-2">
+                    <span className="flex gap-1">
+                      <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                      <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                    </span>
+                  </td>
+
+                  <td className="px-3 sm:px-4 py-2 font-semibold text-white">
+                    {generateProgramCode(student?.department?.name)}
+                  </td>
+
+                  <td className="px-3 sm:px-4 py-2">
+                    {student?.department?.name || "—"}
+                  </td>
+
+                  <td className="px-3 sm:px-4 py-2 font-semibold text-green-400">
+                    A
+                  </td>
+
+                  <td className="px-3 sm:px-4 py-2">
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                        student.isActive
+                          ? "bg-green-600 text-white"
+                          : "bg-red-600 text-white"
+                      }`}
+                    >
+                      {student.isActive ? "ACTIVE" : "INACTIVE"}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
 
-        {/* Enrollments Section */}
-        {student.enrollments && student.enrollments.length > 0 && (
-          <div className="bg-[#2d2d39] rounded-lg p-6 border border-[#25252b] mb-6">
-            <h3 className="text-lg font-semibold text-white mb-4">Current Enrollments</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {student.enrollments.map((enrollment, index) => (
-                <div key={index} className="bg-[#1e1e26] p-4 rounded">
-                  <h4 className="text-white font-medium">{enrollment.subject?.name}</h4>
-                  <p className="text-gray-400 text-sm">Code: {enrollment.subject?.code}</p>
-                  <p className="text-gray-400 text-sm">Credit Hours: {enrollment.subject?.creditHours}</p>
-                  {enrollment.grade && (
-                    <p className="text-gray-400 text-sm">Grade: {enrollment.grade.grade} ({enrollment.grade.points} points)</p>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        {/* Main Navigation Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+          {navCards.map((section, idx) => (
+            <div
+              key={idx}
+              className="bg-[#2d2d39] rounded-lg p-4 border border-[#25252b] shadow-md space-y-2 hover:shadow-lg transition"
+            >
+              <div className="flex items-center gap-2 text-white font-semibold">
+                {section.icon}
+                <span>{section.title}</span>
+              </div>
 
-        {/* Fees Section */}
-        {student.fees && student.fees.length > 0 && (
-          <div className="bg-[#2d2d39] rounded-lg p-6 border border-[#25252b]">
-            <h3 className="text-lg font-semibold text-white mb-4">Fee Status</h3>
-            <div className="space-y-4">
-              {student.fees.map((fee, index) => (
-                <div key={index} className="bg-[#1e1e26] p-4 rounded">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="text-white font-medium">Amount: ${fee.amount}</p>
-                      <p className="text-gray-400 text-sm">Paid: ${fee.paidAmount}</p>
-                      <p className="text-gray-400 text-sm">Due Date: {new Date(fee.dueDate).toLocaleDateString()}</p>
-                    </div>
-                    <span className={`px-3 py-1 rounded text-sm font-medium ${
-                      fee.status === 'PAID' ? 'bg-green-600' : 
-                      fee.status === 'PARTIAL' ? 'bg-yellow-600' : 'bg-red-600'
-                    }`}>
-                      {fee.status}
-                    </span>
-                  </div>
-                </div>
-              ))}
+              <ul className="text-gray-400 text-sm mt-2 space-y-1">
+                {section.items.map((item, i) => (
+                  <li key={i} className="hover:text-white cursor-pointer py-1">
+                    • {item}
+                  </li>
+                ))}
+              </ul>
             </div>
-          </div>
-        )}
+          ))}
+        </div>
       </div>
     </div>
   );

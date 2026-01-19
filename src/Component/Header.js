@@ -10,7 +10,7 @@ export default function Header() {
 
   useEffect(() => {
     const checkAuthStatus = async () => {
-      if (typeof window !== 'undefined') {
+      if (typeof window !== "undefined") {
         const { isAuthenticated, getCurrentUser } = await import("../lib/auth");
         const authenticated = isAuthenticated();
         setIsLoggedIn(authenticated);
@@ -36,7 +36,7 @@ export default function Header() {
           <Link href="/">
             <Logo width={60} height={50} className="cursor-pointer" />
           </Link>
-          
+
           {isLoggedIn && user && (
             <div className="flex items-center space-x-4">
               <span className="text-white text-sm">
