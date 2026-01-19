@@ -305,8 +305,14 @@ export const api = {
  * Service classes for different entities
  */
 export class AdminService {
-  static async getAll() {
-    return api.get('/admin');
+  static async getAll(params = {}) {
+    const queryParams = new URLSearchParams();
+    if (params.page) queryParams.append('page', params.page);
+    if (params.limit) queryParams.append('limit', params.limit);
+    if (params.search) queryParams.append('search', params.search);
+
+    const queryString = queryParams.toString();
+    return api.get(`/admin${queryString ? `?${queryString}` : ''}`);
   }
 
   static async getById(id) {
@@ -331,8 +337,15 @@ export class AdminService {
 }
 
 export class StaffService {
-  static async getAll() {
-    return api.get('/staff');
+  static async getAll(params = {}) {
+    const queryParams = new URLSearchParams();
+    if (params.page) queryParams.append('page', params.page);
+    if (params.limit) queryParams.append('limit', params.limit);
+    if (params.search) queryParams.append('search', params.search);
+    if (params.role) queryParams.append('role', params.role);
+
+    const queryString = queryParams.toString();
+    return api.get(`/staff${queryString ? `?${queryString}` : ''}`);
   }
 
   static async getById(id) {
@@ -361,8 +374,16 @@ export class StaffService {
 }
 
 export class StudentService {
-  static async getAll() {
-    return api.get('/students');
+  static async getAll(params = {}) {
+    const queryParams = new URLSearchParams();
+    if (params.page) queryParams.append('page', params.page);
+    if (params.limit) queryParams.append('limit', params.limit);
+    if (params.search) queryParams.append('search', params.search);
+    if (params.departmentId) queryParams.append('departmentId', params.departmentId);
+    if (params.level) queryParams.append('level', params.level);
+
+    const queryString = queryParams.toString();
+    return api.get(`/students${queryString ? `?${queryString}` : ''}`);
   }
 
   static async getById(id) {
