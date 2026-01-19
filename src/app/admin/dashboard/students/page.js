@@ -5,7 +5,7 @@ import BulkFileUpload from "@/Component/Admin/Common/bulkFileUpload";
 import StudentsTable from "@/Component/Admin/Student/StudentsTable";
 import Modal from "@/Component/Common/Modal";
 import { StudentService, ApiResponse } from "@/lib/api";
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 // Component to display bulk operation results
 function BulkResultDisplay({ result, operationType, onClose }) {
@@ -85,10 +85,10 @@ export default function StudentsPage() {
   const [isAddUploadOpen, setIsAddUploadOpen] = useState(false);
   const [isBulkUploadOpen, setBulkUploadOpen] = useState(false);
   const [isBulkUpdateOpen, setIsBulkUpdateOpen] = useState(false);
-  const [isDownloadOpen, setIsDownloadOpen] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [formKey, setFormKey] = useState(0);
+  const tableRef = useRef(null);
 
   // Bulk operation states
   const [bulkLoading, setBulkLoading] = useState(false);
@@ -180,12 +180,11 @@ export default function StudentsPage() {
             </span>
           </button>
 
-          {/* //TODO: need to develop :: download all students list with paginated items  */}
           <button
-            onClick={() => setIsDownloadOpen(true)}
+            onClick={() => tableRef.current?.downloadCurrentPage()}
             className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition"
           >
-            <span >
+            <span>
               <img src="/icon/download-icon.svg" alt="Download" className="w-4 h-4 mr-2 inline-block filter invert brightness-0" />
               Download List
             </span>
@@ -287,7 +286,7 @@ export default function StudentsPage() {
 
       {/* Students Table */}
       <div className="bg-[#2d2d39] rounded-xl p-6 border border-[#25252b]">
-        <StudentsTable key={refreshKey} />
+        <StudentsTable ref={tableRef} key={refreshKey} />
       </div>
     </div>
   );
