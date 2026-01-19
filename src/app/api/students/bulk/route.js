@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import Papa from 'papaparse';
 import bcrypt from 'bcrypt';
 
-// POST /api/students/bulk - Bulk upload students via CSV
+// POST /api/students/bulk - Bulk upload (create) students via CSV
 export async function POST(request) {
   try {
     const formData = await request.formData();
@@ -55,14 +55,15 @@ export async function POST(request) {
         }
 
         // Check if student already exists
+        const orConditions = [
+          { email: studentData.email },
+          { studentId: studentData.studentId },
+        ];
+        if (studentData.cnic) {
+          orConditions.push({ cnic: studentData.cnic });
+        }
         const existingStudent = await prisma.student.findFirst({
-          where: {
-            OR: [
-              { email: studentData.email },
-              { studentId: studentData.studentId },
-              ...(studentData.cnic && [{ cnic: studentData.cnic }]),
-            ],
-          },
+          where: { OR: orConditions },
         });
 
         if (existingStudent) {
@@ -128,6 +129,155 @@ export async function POST(request) {
     console.error('Error in bulk upload:', error);
     return NextResponse.json(
       { error: 'Bulk upload failed' },
+      { status: 500 }
+    );
+  }
+}
+
+// PUT /api/students/bulk - Bulk update existing students via CSV
+export async function PUT(request) {
+  try {
+    const formData = await request.formData();
+    const file = formData.get('file');
+
+    if (!file) {
+      return NextResponse.json(
+        { error: 'No file uploaded' },
+        { status: 400 }
+      );
+    }
+
+    const fileContent = await file.text();
+    const parseResult = Papa.parse(fileContent, {
+      header: true,
+      skipEmptyLines: true,
+    });
+
+    if (parseResult.errors.length > 0) {
+      return NextResponse.json(
+        { error: 'Invalid CSV format', details: parseResult.errors },
+        { status: 400 }
+      );
+    }
+
+    const studentsData = parseResult.data;
+    const results = {
+      success: [],
+      errors: [],
+    };
+
+    for (let i = 0; i < studentsData.length; i++) {
+      try {
+        const studentData = studentsData[i];
+
+        // For update, we need either id, email, or studentId to identify the student
+        if (!studentData.id && !studentData.email && !studentData.studentId) {
+          results.errors.push({
+            row: i + 1,
+            error: 'Missing identifier (id, email, or studentId required)',
+            data: studentData,
+          });
+          continue;
+        }
+
+        // Find existing student
+        const findConditions = [];
+        if (studentData.id) findConditions.push({ id: parseInt(studentData.id) });
+        if (studentData.email) findConditions.push({ email: studentData.email });
+        if (studentData.studentId) findConditions.push({ studentId: studentData.studentId });
+
+        const existingStudent = await prisma.student.findFirst({
+          where: { OR: findConditions },
+        });
+
+        if (!existingStudent) {
+          results.errors.push({
+            row: i + 1,
+            error: 'Student not found',
+            data: studentData,
+          });
+          continue;
+        }
+
+        // Build update data (only include fields that are provided)
+        const updateData = {};
+        if (studentData.fullName) updateData.fullName = studentData.fullName;
+        if (studentData.email && studentData.email !== existingStudent.email) {
+          // Check if new email already exists
+          const emailExists = await prisma.student.findFirst({
+            where: { email: studentData.email, id: { not: existingStudent.id } },
+          });
+          if (emailExists) {
+            results.errors.push({
+              row: i + 1,
+              error: 'Email already in use by another student',
+              data: studentData,
+            });
+            continue;
+          }
+          updateData.email = studentData.email;
+        }
+        if (studentData.level) updateData.level = studentData.level;
+        if (studentData.departmentId) updateData.departmentId = parseInt(studentData.departmentId);
+        if (studentData.phone !== undefined) updateData.phone = studentData.phone || null;
+        if (studentData.address !== undefined) updateData.address = studentData.address || null;
+        if (studentData.dateOfBirth) updateData.dateOfBirth = new Date(studentData.dateOfBirth);
+        if (studentData.fatherName !== undefined) updateData.fatherName = studentData.fatherName || null;
+        if (studentData.cnic !== undefined) updateData.cnic = studentData.cnic || null;
+        if (studentData.admissionDate) updateData.admissionDate = new Date(studentData.admissionDate);
+        if (studentData.password) {
+          updateData.password = await bcrypt.hash(studentData.password, 10);
+        }
+
+        if (Object.keys(updateData).length === 0) {
+          results.errors.push({
+            row: i + 1,
+            error: 'No fields to update',
+            data: studentData,
+          });
+          continue;
+        }
+
+        const student = await prisma.student.update({
+          where: { id: existingStudent.id },
+          data: updateData,
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+            studentId: true,
+            level: true,
+          },
+        });
+
+        results.success.push({
+          row: i + 1,
+          data: student,
+        });
+      } catch (error) {
+        results.errors.push({
+          row: i + 1,
+          error: error.message,
+          data: studentsData[i],
+        });
+      }
+    }
+
+    return NextResponse.json({
+      message: 'Bulk update completed',
+      results: {
+        total: studentsData.length,
+        successful: results.success.length,
+        failed: results.errors.length,
+        details: results,
+      },
+    });
+  } catch (error) {
+    console.error('Error in bulk update:', error);
+    return NextResponse.json(
+      {
+        error: 'Bulk update failed',
+      },
       { status: 500 }
     );
   }
