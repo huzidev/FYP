@@ -10,10 +10,11 @@ const AdminSidebar = () => {
 
   const pageItems = [
     { name: "Dashboard", path: "/admin/dashboard" },
-    { name: "Students", path: "/students" },
-    { name: "Staff", path: "/staff" },
-    { name: "Admins", path: "/admins" },
+    { name: "Students", path: "/admin/dashboard/students" },
+    { name: "Staff", path: "/admin/dashboard/staff" },
+    { name: "Admins", path: "/admin/dashboard/admins" },
     { name: "Courses", path: "/admin/dashboard/courses" },
+    { name: "Announcements", path: "/admin/dashboard/announcements" },
   ];
 
   const handleLogout = () => {
@@ -49,7 +50,7 @@ const AdminSidebar = () => {
       <div className="p-5 border-t border-[#25252b]">
         <button
           onClick={handleLogout}
-          className="w-full py-3 px-4 rounded-lg bg-red-600 hover:bg-red-700 text-white transition text-center"
+          className="w-full py-3 px-4 cursor-pointer rounded-lg bg-red-600 hover:bg-red-700 text-white transition text-center"
         >
           Logout
         </button>

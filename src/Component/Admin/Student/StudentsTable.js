@@ -1,10 +1,19 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useImperativeHandle, forwardRef } from "react";
 import { ApiError, StudentService } from "../../../lib/api";
-import ConfirmModal from "../../Common/ConfirmModal";
 
-export default function StudentsTable() {
+// Helper function to escape CSV fields
+function escapeCsvField(field) {
+  if (field === null || field === undefined) return '';
+  const str = String(field);
+  if (str.includes(',') || str.includes('\n') || str.includes('"')) {
+    return `"${str.replace(/"/g, '""')}"`;
+  }
+  return str;
+}
+
+const StudentsTable = forwardRef(function StudentsTable(props, ref) {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -12,27 +21,24 @@ export default function StudentsTable() {
   const [selectedDepartment, setSelectedDepartment] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState({});
-  const [deleteModal, setDeleteModal] = useState({ isOpen: false, student: null });
   const router = useRouter();
 
   const fetchStudents = async (page = 1, search = "", departmentId = "") => {
     try {
       setLoading(true);
-      const queryParams = new URLSearchParams({
-        page: page.toString(),
-        limit: "10",
-        ...(search && { search }),
-        ...(departmentId && { departmentId }),
+      const response = await StudentService.getAll({
+        page,
+        limit: 10,
+        search: search || undefined,
+        departmentId: departmentId || undefined,
       });
-
-      const response = await StudentService.getAll();
       setStudents(response.data.data || []);
       setPagination(response.data.pagination || {});
       setError(null);
     } catch (err) {
       console.error("Error fetching students:", err);
       if (err instanceof ApiError) {
-        setError(err.message);
+        setError(err.getUserMessage ? err.getUserMessage() : err.message);
       } else {
         setError("Failed to fetch students");
       }
@@ -59,22 +65,52 @@ export default function StudentsTable() {
     setCurrentPage(page);
   };
 
-  const handleDelete = async () => {
-    if (!deleteModal.student) return;
-    
-    try {
-      await StudentService.delete(deleteModal.student.id);
-      fetchStudents(currentPage, searchTerm, selectedDepartment);
-      setDeleteModal({ isOpen: false, student: null });
-    } catch (err) {
-      console.error("Error deleting student:", err);
-      alert("Failed to delete student");
-    }
-  };
-
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString();
   };
+
+  // Download current page students as CSV
+  const downloadCurrentPage = () => {
+    if (students.length === 0) {
+      alert('No students to download');
+      return;
+    }
+
+    const headers = ['Student ID', 'Full Name', 'Email', 'Department', 'Level', 'Phone', 'Father Name', 'CNIC', 'Address'];
+    const csvRows = [headers.join(',')];
+
+    for (const student of students) {
+      const row = [
+        escapeCsvField(student.studentId),
+        escapeCsvField(student.fullName),
+        escapeCsvField(student.email),
+        escapeCsvField(student.department?.name || ''),
+        escapeCsvField(student.level),
+        escapeCsvField(student.phone || ''),
+        escapeCsvField(student.fatherName || ''),
+        escapeCsvField(student.cnic || ''),
+        escapeCsvField(student.address || ''),
+      ];
+      csvRows.push(row.join(','));
+    }
+
+    const csvContent = csvRows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `students_page${currentPage}_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  // Expose methods to parent via ref
+  useImperativeHandle(ref, () => ({
+    downloadCurrentPage,
+    getStudentsCount: () => students.length,
+  }));
 
   if (loading && students.length === 0) {
     return (
@@ -169,12 +205,6 @@ export default function StudentsTable() {
                       >
                         Edit
                       </button>
-                      <button
-                        onClick={() => setDeleteModal({ isOpen: true, student })}
-                        className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
-                      >
-                        Delete
-                      </button>
                     </div>
                   </td>
                 </tr>
@@ -224,17 +254,8 @@ export default function StudentsTable() {
           <div className="text-sm text-gray-400">Updating...</div>
         </div>
       )}
-
-      <ConfirmModal
-        isOpen={deleteModal.isOpen}
-        onClose={() => setDeleteModal({ isOpen: false, student: null })}
-        onConfirm={handleDelete}
-        title="Delete Student"
-        message={`Are you sure you want to delete ${deleteModal.student?.fullName}? This action cannot be undone.`}
-        confirmText="Delete"
-        cancelText="Cancel"
-        variant="danger"
-      />
     </div>
   );
-}
+});
+
+export default StudentsTable;

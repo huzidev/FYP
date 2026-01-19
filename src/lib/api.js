@@ -5,6 +5,9 @@
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
 
+/**
+ * API Error class with user-friendly message handling
+ */
 class ApiError extends Error {
   constructor(message, status, data = null) {
     super(message);
@@ -12,7 +15,130 @@ class ApiError extends Error {
     this.status = status;
     this.data = data;
   }
+
+  /**
+   * Get user-friendly error message based on status code and context
+   */
+  getUserMessage() {
+    // Handle based on status code
+    switch (this.status) {
+      case 400:
+        return this.extractMessage() || 'Invalid request. Please check your input.';
+      case 401:
+        return 'Session expired. Please login again.';
+      case 403:
+        return 'You do not have permission to perform this action.';
+      case 404:
+        return this.extractMessage() || 'The requested resource was not found.';
+      case 409:
+        return this.extractMessage() || 'This record already exists.';
+      case 422:
+        return this.extractMessage() || 'Invalid data provided.';
+      case 429:
+        return 'Too many requests. Please wait and try again.';
+      case 500:
+        return 'Server error. Please try again later.';
+      case 502:
+      case 503:
+      case 504:
+        return 'Service temporarily unavailable. Please try again later.';
+      case 0:
+        return 'Network error. Please check your internet connection.';
+      default:
+        return this.extractMessage() || 'Something went wrong. Please try again.';
+    }
+  }
+
+  /**
+   * Extract clean message from error data
+   */
+  extractMessage() {
+    if (!this.data) return null;
+
+    // Handle string data
+    if (typeof this.data === 'string') {
+      return this.data;
+    }
+
+    // Handle object data - try common error fields
+    if (typeof this.data === 'object') {
+      return this.data.error || this.data.message || this.data.detail || null;
+    }
+
+    return null;
+  }
+
+  /**
+   * Check if error is authentication related
+   */
+  isAuthError() {
+    return this.status === 401 || this.status === 403;
+  }
+
+  /**
+   * Check if error is a validation error
+   */
+  isValidationError() {
+    return this.status === 400 || this.status === 422;
+  }
+
+  /**
+   * Check if error is a server error
+   */
+  isServerError() {
+    return this.status >= 500;
+  }
+
+  /**
+   * Check if error is a network error
+   */
+  isNetworkError() {
+    return this.status === 0;
+  }
 }
+
+/**
+ * API Response handler utility
+ */
+export const ApiResponse = {
+  /**
+   * Handle API error and return user-friendly message
+   */
+  getErrorMessage(error) {
+    if (error instanceof ApiError) {
+      return error.getUserMessage();
+    }
+    if (error?.message) {
+      return error.message;
+    }
+    return 'Something went wrong. Please try again.';
+  },
+
+  /**
+   * Check if should redirect to login
+   */
+  shouldRedirectToLogin(error) {
+    return error instanceof ApiError && error.status === 401;
+  },
+
+  /**
+   * Format bulk operation results for display
+   */
+  formatBulkResults(data) {
+    if (!data?.results) return null;
+
+    const { total, successful, failed, details } = data.results;
+    return {
+      total,
+      successful,
+      failed,
+      errors: details?.errors?.map(err => ({
+        row: err.row,
+        message: typeof err.error === 'string' ? err.error : 'Failed to process',
+      })) || [],
+    };
+  },
+};
 
 /**
  * Base fetch function with error handling
@@ -142,18 +268,36 @@ export const api = {
    * @param {Object} options - Additional fetch options
    */
   async upload(url, formData, options = {}) {
-    const config = {
-      method: 'POST',
-      body: formData,
-      ...options,
-    };
+    try {
+      // Don't use baseFetch - it sets Content-Type: application/json which breaks FormData
+      // Browser must set Content-Type automatically with proper multipart boundary
+      const response = await fetch(`${BASE_URL}${url}`, {
+        method: options.method || 'POST',
+        body: formData,
+        // Don't set Content-Type header - browser will set it with boundary
+      });
 
-    // Remove Content-Type header for FormData (browser will set it automatically)
-    if (config.headers && config.headers['Content-Type']) {
-      delete config.headers['Content-Type'];
+      let data;
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        data = await response.json();
+      } else {
+        data = await response.text();
+      }
+
+      if (!response.ok) {
+        throw new ApiError(
+          data?.message || data?.error || 'Upload failed',
+          response.status,
+          data
+        );
+      }
+
+      return { data, status: response.status, headers: response.headers };
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+      throw new ApiError(error.message || 'Upload failed', 0, null);
     }
-
-    return baseFetch(url, config);
   },
 };
 
@@ -161,8 +305,14 @@ export const api = {
  * Service classes for different entities
  */
 export class AdminService {
-  static async getAll() {
-    return api.get('/admin');
+  static async getAll(params = {}) {
+    const queryParams = new URLSearchParams();
+    if (params.page) queryParams.append('page', params.page);
+    if (params.limit) queryParams.append('limit', params.limit);
+    if (params.search) queryParams.append('search', params.search);
+
+    const queryString = queryParams.toString();
+    return api.get(`/admin${queryString ? `?${queryString}` : ''}`);
   }
 
   static async getById(id) {
@@ -187,8 +337,15 @@ export class AdminService {
 }
 
 export class StaffService {
-  static async getAll() {
-    return api.get('/staff');
+  static async getAll(params = {}) {
+    const queryParams = new URLSearchParams();
+    if (params.page) queryParams.append('page', params.page);
+    if (params.limit) queryParams.append('limit', params.limit);
+    if (params.search) queryParams.append('search', params.search);
+    if (params.role) queryParams.append('role', params.role);
+
+    const queryString = queryParams.toString();
+    return api.get(`/staff${queryString ? `?${queryString}` : ''}`);
   }
 
   static async getById(id) {
@@ -217,11 +374,20 @@ export class StaffService {
 }
 
 export class StudentService {
-  static async getAll() {
-    return api.get('/students');
+  static async getAll(params = {}) {
+    const queryParams = new URLSearchParams();
+    if (params.page) queryParams.append('page', params.page);
+    if (params.limit) queryParams.append('limit', params.limit);
+    if (params.search) queryParams.append('search', params.search);
+    if (params.departmentId) queryParams.append('departmentId', params.departmentId);
+    if (params.level) queryParams.append('level', params.level);
+
+    const queryString = queryParams.toString();
+    return api.get(`/students${queryString ? `?${queryString}` : ''}`);
   }
 
   static async getById(id) {
+    console.log('check api calling with id', id);
     return api.get(`/students/${id}`);
   }
 
@@ -247,6 +413,10 @@ export class StudentService {
 
   static async bulkUpload(formData) {
     return api.upload('/students/bulk', formData);
+  }
+
+  static async bulkUpdate(formData) {
+    return api.upload('/students/bulk', formData, { method: 'PUT' });
   }
 }
 

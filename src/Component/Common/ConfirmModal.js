@@ -24,7 +24,7 @@ export default function ConfirmModal({ isOpen, onClose, onConfirm, title, messag
           <div className="flex justify-end gap-3">
             <button
               onClick={onClose}
-              className="px-4 py-2 bg-[#1e1e26] text-gray-300 rounded-lg hover:bg-[#25252b] transition"
+              className="px-4 py-2 cursor-pointer bg-[#1e1e26] text-gray-300 rounded-lg hover:bg-[#25252b] transition"
             >
               {cancelText}
             </button>
@@ -33,7 +33,7 @@ export default function ConfirmModal({ isOpen, onClose, onConfirm, title, messag
                 onConfirm();
                 onClose();
               }}
-              className={`px-4 py-2 text-white rounded-lg transition ${variantClasses[variant]}`}
+              className={`px-4 py-2 cursor-pointer text-white rounded-lg transition ${variantClasses[variant]}`}
             >
               {confirmText}
             </button>

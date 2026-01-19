@@ -9,6 +9,7 @@
     "lint": "next lint",
     "postinstall": "prisma generate",
     "db:seed": "node prisma/seed.js",
+    "db:seed:admin": "SEED_ADMIN_ONLY=true node prisma/seed.js",
     "db:reset": "npx prisma db push --force-reset && npm run db:seed"
   },
   "prisma": {
@@ -16,12 +17,15 @@
   },
   "dependencies": {
     "@prisma/client": "^6.12.0",
+    "@tiptap/react": "^3.15.1",
+    "@tiptap/starter-kit": "^3.15.1",
     "axios": "^1.12.2",
     "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.3",
     "dayjs": "^1.11.19",
     "framer-motion": "^12.23.26",
     "lucide-react": "^0.562.0",
+    "cloudinary": "^2.8.0",
     "next": "^16.0.7",
     "nodemailer": "^7.0.12",
     "papaparse": "^5.5.3",

@@ -3,8 +3,15 @@ const bcrypt = require('bcrypt');
 
 const prisma = new PrismaClient();
 
+// Check if we should seed only admin
+const SEED_ADMIN_ONLY = process.env.SEED_ADMIN_ONLY === 'true';
+
 async function main() {
   console.log('🌱 Starting database seed...');
+  
+  if (SEED_ADMIN_ONLY) {
+    console.log('⚙️  Running in ADMIN ONLY mode...');
+  }
 
   // Create Departments
   console.log('📚 Creating departments...');
@@ -41,13 +48,13 @@ async function main() {
 
   // Create Admin
   console.log('👤 Creating admin user...');
-  const hashedAdminPassword = await bcrypt.hash('admin@smi.com', 10);
+  const hashedAdminPassword = await bcrypt.hash('huzaifaiqbal.2015@gmail.com', 10);
   const admin = await prisma.admin.upsert({
-    where: { email: 'admin@smi.com' },
+    where: { email: 'huzaifaiqbal.2015@gmail.com' },
     update: {},
     create: {
-      fullName: 'System Administrator',
-      email: 'admin@smi.com',
+      fullName: 'Huzaifa Iqbal',
+      email: 'huzaifaiqbal.2015@gmail.com',
       password: hashedAdminPassword,
       role: 'SUPER_ADMIN',
       phone: '+1234567890',
@@ -55,6 +62,14 @@ async function main() {
     },
   });
   console.log('✅ Created admin user: admin@smi.com / admin@smi.com');
+
+  // If only seeding admin, stop here
+  if (SEED_ADMIN_ONLY) {
+    console.log('🎉 Admin seeding completed!');
+    console.log('\n📋 Admin Login Credentials:');
+    console.log('👤 Admin: admin@smi.com / admin@smi.com');
+    return;
+  }
 
   // Create Staff Members
   console.log('👨‍🏫 Creating staff members...');

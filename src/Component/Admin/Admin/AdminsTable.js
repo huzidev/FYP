@@ -1,32 +1,44 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useImperativeHandle, forwardRef } from "react";
 import { AdminService, ApiError } from "../../../lib/api";
 import { getCurrentUser } from "../../../lib/auth";
-import ConfirmModal from "../../Common/ConfirmModal";
 
-export default function AdminsTable() {
+// Helper function to escape CSV fields
+function escapeCsvField(field) {
+  if (field === null || field === undefined) return '';
+  const str = String(field);
+  if (str.includes(',') || str.includes('\n') || str.includes('"')) {
+    return `"${str.replace(/"/g, '""')}"`;
+  }
+  return str;
+}
+
+const AdminsTable = forwardRef(function AdminsTable(props, ref) {
   const [admins, setAdmins] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState({});
-  const [deleteModal, setDeleteModal] = useState({ isOpen: false, admin: null });
   const router = useRouter();
   const currentUser = getCurrentUser();
 
   const fetchAdmins = async (page = 1, search = "") => {
     try {
       setLoading(true);
-      const response = await AdminService.getAll();
+      const response = await AdminService.getAll({
+        page,
+        limit: 10,
+        search: search || undefined,
+      });
       setAdmins(response.data.data || []);
       setPagination(response.data.pagination || {});
       setError(null);
     } catch (err) {
       console.error("Error fetching admins:", err);
       if (err instanceof ApiError) {
-        setError(err.message);
+        setError(err.getUserMessage ? err.getUserMessage() : err.message);
       } else {
         setError("Failed to fetch admins");
       }
@@ -44,38 +56,52 @@ export default function AdminsTable() {
     setCurrentPage(1);
   };
 
-  const handleDelete = async () => {
-    if (!deleteModal.admin) return;
-    
-    try {
-      await AdminService.delete(deleteModal.admin.id);
-      fetchAdmins(currentPage, searchTerm);
-      setDeleteModal({ isOpen: false, admin: null });
-    } catch (err) {
-      console.error("Error deleting admin:", err);
-      alert("Failed to delete admin");
-    }
-  };
-
   const canEdit = (admin) => {
     if (!currentUser) return false;
-    // Super admin can't be edited by anyone
     if (admin.role === "SUPER_ADMIN") return false;
-    // Current user can't edit themselves (they should view profile)
     if (admin.id === currentUser.id) return false;
-    // Admin can edit other admins but not super admins
     return currentUser.role === "SUPER_ADMIN" || currentUser.role === "ADMIN";
   };
 
-  const canDelete = (admin) => {
-    if (!currentUser) return false;
-    // Super admin can't be deleted
-    if (admin.role === "SUPER_ADMIN") return false;
-    // Current user can't delete themselves
-    if (admin.id === currentUser.id) return false;
-    // Only super admin can delete
-    return currentUser.role === "SUPER_ADMIN";
+  // Download current page admins as CSV
+  const downloadCurrentPage = () => {
+    if (admins.length === 0) {
+      alert('No admins to download');
+      return;
+    }
+
+    const headers = ['ID', 'Full Name', 'Email', 'Role', 'Phone', 'Status'];
+    const csvRows = [headers.join(',')];
+
+    for (const admin of admins) {
+      const row = [
+        admin.id,
+        escapeCsvField(admin.fullName),
+        escapeCsvField(admin.email),
+        escapeCsvField(admin.role),
+        escapeCsvField(admin.phone || ''),
+        admin.isActive ? 'Active' : 'Inactive',
+      ];
+      csvRows.push(row.join(','));
+    }
+
+    const csvContent = csvRows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `admins_page${currentPage}_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
+
+  // Expose methods to parent via ref
+  useImperativeHandle(ref, () => ({
+    downloadCurrentPage,
+    getAdminsCount: () => admins.length,
+  }));
 
   if (loading && admins.length === 0) {
     return (
@@ -175,14 +201,6 @@ export default function AdminsTable() {
                               Edit
                             </button>
                           )}
-                          {canDelete(admin) && (
-                            <button
-                              onClick={() => setDeleteModal({ isOpen: true, admin })}
-                              className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
-                            >
-                              Delete
-                            </button>
-                          )}
                         </>
                       )}
                     </div>
@@ -229,16 +247,13 @@ export default function AdminsTable() {
         </div>
       )}
 
-      <ConfirmModal
-        isOpen={deleteModal.isOpen}
-        onClose={() => setDeleteModal({ isOpen: false, admin: null })}
-        onConfirm={handleDelete}
-        title="Delete Admin"
-        message={`Are you sure you want to delete ${deleteModal.admin?.fullName}? This action cannot be undone.`}
-        confirmText="Delete"
-        cancelText="Cancel"
-        variant="danger"
-      />
+      {loading && admins.length > 0 && (
+        <div className="text-center py-4">
+          <div className="text-sm text-gray-400">Updating...</div>
+        </div>
+      )}
     </div>
   );
-}
+});
+
+export default AdminsTable;

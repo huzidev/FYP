@@ -1,8 +1,7 @@
 "use client";
 import { useRef } from "react";
-import Papa from "papaparse";
 
-export default function BulkFileUpload({ mode, onSubmit }) {
+export default function BulkFileUpload({ onSubmit }) {
   const fileInputRef = useRef(null);
 
   const handleClick = () => {
@@ -12,37 +11,17 @@ export default function BulkFileUpload({ mode, onSubmit }) {
   const handleChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    console.log("papa parsing the file (data)")
-    Papa.parse(file, {
-      header: true, // first row as headers
-      skipEmptyLines: true,
-      complete: (results) => {
 
-        // 1. Expected headers (required feilds)
-        const requiredHeaders = ["name", "email", "phoneNumber"];
+    // Validate file type
+    if (!file.name.endsWith(".csv")) {
+      alert("Please upload a CSV file");
+      return;
+    }
 
-        // 2. Actual headers from PapaParse
-        const actualHeaders = results.meta.fields; // Papa gives you header row here
-
-        // 3. Check if all required headers exist
-        const isValid = requiredHeaders.every((h) => actualHeaders.includes(h));
-
-        if (!isValid) {
-          alert(
-            `Invalid CSV file! Required headers: ${requiredHeaders.join(", ")}`
-          );
-          return;
-        }
-
-        // 4. If valid, send data to parent file
-        if (onSubmit) {
-          onSubmit(results.data, mode); // send(all parsed data in array , mode)
-        }
-      },
-      error: (err) => {
-        console.error("CSV Parse Error:", err);
-      },
-    });
+    // Send raw file to parent - backend will handle parsing
+    if (onSubmit) {
+      onSubmit(file);
+    }
   };
 
   return (
@@ -53,10 +32,12 @@ export default function BulkFileUpload({ mode, onSubmit }) {
       onClick={handleClick}
     >
       <p className="text-gray-700 text-lg font-medium mb-2">
-        Drop your CSV file here
+        Click to select CSV file
       </p>
-      ``
-      <p className="text-gray-500 text-sm">or click anywhere to select file</p>
+      <p className="text-gray-500 text-sm">Supported format: .csv</p>
+      <p className="text-gray-400 text-xs mt-2">
+        Required: fullName, email, studentId, level, departmentId
+      </p>
       <input
         type="file"
         accept=".csv"

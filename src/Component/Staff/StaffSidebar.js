@@ -11,6 +11,7 @@ const StaffSidebar = () => {
   const pageItems = [
     { name: "Dashboard", path: "/staff/dashboard" },
     { name: "Students", path: "/students" },
+    { name: "Announcements", path: "/staff/dashboard/announcements" },
   ];
 
   const handleLogout = () => {

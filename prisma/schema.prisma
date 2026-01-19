@@ -216,3 +216,49 @@ enum FeeStatus {
   PARTIAL
   OVERDUE
 }
+
+model Announcement {
+  id           Int                  @id @default(autoincrement())
+  title        String
+  content      String               @db.Text // Rich text content
+  imageUrl     String?              // Cloudinary image URL
+  type         AnnouncementType     // QUESTION or ANNOUNCEMENT
+  visibility   AnnouncementVisibility // STAFF_ONLY, STUDENTS_ONLY, BOTH
+  isActive     Boolean              @default(true)
+  createdById  Int                  // Can be Admin or Staff ID
+  createdByType UserType            // ADMIN or STAFF
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  queries      AnnouncementQuery[]
+
+  @@map("announcements")
+}
+
+model AnnouncementQuery {
+  id             Int          @id @default(autoincrement())
+  content        String       @db.Text
+  announcementId Int
+  userId         Int          // Student ID who made the query
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+
+  @@map("announcement_queries")
+}
+
+enum AnnouncementType {
+  QUESTION      // Students can comment/query
+  ANNOUNCEMENT  // No comments allowed
+}
+
+enum AnnouncementVisibility {
+  STAFF_ONLY
+  STUDENTS_ONLY
+  BOTH
+}
+
+enum UserType {
+  ADMIN
+  STAFF
+  STUDENT
+}

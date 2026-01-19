@@ -1,10 +1,19 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useImperativeHandle, forwardRef } from "react";
 import { ApiError, StaffService } from "../../../lib/api";
-import ConfirmModal from "../../Common/ConfirmModal";
 
-export default function StaffTable() {
+// Helper function to escape CSV fields
+function escapeCsvField(field) {
+  if (field === null || field === undefined) return '';
+  const str = String(field);
+  if (str.includes(',') || str.includes('\n') || str.includes('"')) {
+    return `"${str.replace(/"/g, '""')}"`;
+  }
+  return str;
+}
+
+const StaffTable = forwardRef(function StaffTable(props, ref) {
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -12,27 +21,24 @@ export default function StaffTable() {
   const [selectedRole, setSelectedRole] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState({});
-  const [deleteModal, setDeleteModal] = useState({ isOpen: false, member: null });
   const router = useRouter();
 
   const fetchStaff = async (page = 1, search = "", role = "") => {
     try {
       setLoading(true);
-      const queryParams = new URLSearchParams({
-        page: page.toString(),
-        limit: "10",
-        ...(search && { search }),
-        ...(role && { role }),
+      const response = await StaffService.getAll({
+        page,
+        limit: 10,
+        search: search || undefined,
+        role: role || undefined,
       });
-
-      const response = await StaffService.getAll();
       setStaff(response.data.data || []);
       setPagination(response.data.pagination || {});
       setError(null);
     } catch (err) {
       console.error("Error fetching staff:", err);
       if (err instanceof ApiError) {
-        setError(err.message);
+        setError(err.getUserMessage ? err.getUserMessage() : err.message);
       } else {
         setError("Failed to fetch staff");
       }
@@ -59,18 +65,45 @@ export default function StaffTable() {
     setCurrentPage(page);
   };
 
-  const handleDelete = async () => {
-    if (!deleteModal.member) return;
-    
-    try {
-      await StaffService.delete(deleteModal.member.id);
-      fetchStaff(currentPage, searchTerm, selectedRole);
-      setDeleteModal({ isOpen: false, member: null });
-    } catch (err) {
-      console.error("Error deleting staff:", err);
-      alert("Failed to delete staff member");
+  // Download current page staff as CSV
+  const downloadCurrentPage = () => {
+    if (staff.length === 0) {
+      alert('No staff to download');
+      return;
     }
+
+    const headers = ['Staff ID', 'Full Name', 'Email', 'Role', 'Phone', 'Status'];
+    const csvRows = [headers.join(',')];
+
+    for (const member of staff) {
+      const row = [
+        escapeCsvField(member.staffId),
+        escapeCsvField(member.fullName),
+        escapeCsvField(member.email),
+        escapeCsvField(member.role),
+        escapeCsvField(member.phone || ''),
+        member.isActive ? 'Active' : 'Inactive',
+      ];
+      csvRows.push(row.join(','));
+    }
+
+    const csvContent = csvRows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `staff_page${currentPage}_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
+
+  // Expose methods to parent via ref
+  useImperativeHandle(ref, () => ({
+    downloadCurrentPage,
+    getStaffCount: () => staff.length,
+  }));
 
   if (loading && staff.length === 0) {
     return (
@@ -168,12 +201,6 @@ export default function StaffTable() {
                       >
                         Edit
                       </button>
-                      <button
-                        onClick={() => setDeleteModal({ isOpen: true, member })}
-                        className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
-                      >
-                        Delete
-                      </button>
                     </div>
                   </td>
                 </tr>
@@ -223,17 +250,8 @@ export default function StaffTable() {
           <div className="text-sm text-gray-400">Updating...</div>
         </div>
       )}
-
-      <ConfirmModal
-        isOpen={deleteModal.isOpen}
-        onClose={() => setDeleteModal({ isOpen: false, member: null })}
-        onConfirm={handleDelete}
-        title="Delete Staff Member"
-        message={`Are you sure you want to delete ${deleteModal.member?.fullName}? This action cannot be undone.`}
-        confirmText="Delete"
-        cancelText="Cancel"
-        variant="danger"
-      />
     </div>
   );
-}
+});
+
+export default StaffTable;
