@@ -1,14 +1,26 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { User, Mail, ArrowLeft } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { User, Mail, ArrowLeft, Trash2, Camera } from "lucide-react";
 import { useRouter } from "next/navigation";
 import dayjs from "dayjs";
 
 export default function ProfileMenu({ student, onBack }) {
   const router = useRouter();
 
-  // ---------- Form State ----------
+  /* =======================
+     IMAGE STATE (NEW)
+  ======================= */
+  const fileRef = useRef(null);
+  const [profileImage, setProfileImage] = useState(
+    student.profileImage || null,
+  );
+  const [publicId, setPublicId] = useState(student.profileImageId || null);
+  const [uploading, setUploading] = useState(false);
+
+  /* =======================
+     EXISTING STATE (UNCHANGED)
+  ======================= */
   const [editMode, setEditMode] = useState(false);
   const [formData, setFormData] = useState({
     phone: student.phone || "",
@@ -16,7 +28,6 @@ export default function ProfileMenu({ student, onBack }) {
     department: student.department?.name || "",
   });
 
-  // ---------- Login Activity ----------
   const [firstLogin, setFirstLogin] = useState(student.firstLogin || null);
   const [currentSession, setCurrentSession] = useState(new Date());
 
@@ -24,86 +35,152 @@ export default function ProfileMenu({ student, onBack }) {
     if (!student.firstLogin) {
       const now = new Date();
       setFirstLogin(now);
-      // API call to save first login can go here
     }
-
     const interval = setInterval(() => setCurrentSession(new Date()), 1000);
     return () => clearInterval(interval);
   }, [student.firstLogin]);
 
-  // ---------- Profile Completion ----------
-  const completion = Math.min(
-    100,
-    [student.phone, student.address, student.department?.name].filter(Boolean)
-      .length * 33
-  );
+  /* =======================
+     IMAGE UPLOAD HANDLER (NEW)
+  ======================= */
 
-  // ---------- Update Profile ----------
-  const handleUpdateProfile = async () => {
+  const handleImageUpload = async (file) => {
+    if (!file) return;
+
     try {
-      const payload = {
-        phone: formData.phone,
-        address: formData.address,
-        department: formData.department,
-      };
+      setUploading(true);
+      const form = new FormData();
+      form.append("file", file);
 
-      const res = await fetch("/api/user/update", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: form,
       });
 
-      if (res.ok) {
-        alert("Profile updated successfully!");
-        setEditMode(false);
-      } else {
-        throw new Error("Failed to update profile");
-      }
-    } catch (error) {
-      console.error(error);
-      alert("Error updating profile. Please try again.");
+      const data = await res.json();
+
+      if (!res.ok) throw new Error("Upload failed");
+
+      setProfileImage(data.secure_url);
+      setPublicId(data.public_id);
+
+      // OPTIONAL: Save to DB
+      await fetch("/api/user/update", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          profileImage: data.secure_url,
+          profileImageId: data.public_id,
+        }),
+      });
+    } catch (err) {
+      console.error(err);
+      alert("Image upload failed");
+    } finally {
+      setUploading(false);
     }
   };
+
+  /* =======================
+     IMAGE DELETE HANDLER (NEW)
+  ======================= */
+  const handleDeleteImage = async () => {
+    try {
+      setProfileImage(null);
+      setPublicId(null);
+
+      await fetch("/api/user/update", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          profileImage: null,
+          profileImageId: null,
+        }),
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const formatDate = (date) =>
+    dayjs(date).format("dddd, MMMM D, YYYY h:mm:ss A");
 
   // ---------- Navigation ----------
   const handleChangePassword = () => router.push("/student/change-password");
   const handleForgotPassword = () => router.push("/student/forgot-password");
 
-  const formatDate = (date) =>
-    dayjs(date).format("dddd, MMMM D, YYYY h:mm:ss A");
+  // ---------- Profile Completion ----------
+  const completion = Math.min(
+    100,
+    [student.phone, student.address, student.department?.name].filter(Boolean)
+      .length * 33,
+  );
 
+  /* =======================
+     UI
+  ======================= */
   return (
     <div className="min-h-screen bg-[#1d1d24] text-gray-300 p-6">
-      {/* Breadcrumb + Back */}
+      {/* Breadcrumb */}
       <div className="flex items-center justify-between mb-6">
         <button
           onClick={onBack}
-          className="flex items-center gap-2 text-gray-400 hover:text-white transition"
+          className="flex items-center gap-2 text-gray-400 hover:text-white"
         >
           <ArrowLeft size={18} />
           Back
         </button>
-
-        <div className="bg-[#2d2d39] px-4 py-2 rounded-lg text-sm border border-[#2a2a33]">
-          <span className="text-gray-400">Dashboard</span>
-          <span className="mx-2">→</span>
-          <span className="text-white font-medium">User Profile</span>
-        </div>
       </div>
 
-      {/* Main Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Sidebar */}
+        {/* SIDEBAR */}
         <aside className="bg-[#2d2d39] rounded-xl p-6 border border-[#25252b] flex flex-col items-center">
-          <div className="w-24 h-24 rounded-full bg-[#1e1e26] flex items-center justify-center mb-4">
-            <User size={40} />
+          {/* ===== PROFILE IMAGE (NEW) ===== */}
+          <div className="relative w-24 h-24 rounded-full overflow-hidden bg-[#1e1e26] flex items-center justify-center">
+            {profileImage ? (
+              <img
+                src={profileImage}
+                alt="Profile"
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <User size={40} />
+            )}
+
+            <button
+              onClick={() => fileRef.current.click()}
+              className="absolute bottom-0 right-0 bg-blue-600 p-1 rounded-full"
+            >
+              <Camera size={14} />
+            </button>
           </div>
 
-          <h3 className="text-lg font-semibold text-white">
+          <input
+            type="file"
+            accept="image/*"
+            hidden
+            ref={fileRef}
+            onChange={(e) => handleImageUpload(e.target.files[0])}
+          />
+
+          {profileImage && (
+            <button
+              onClick={handleDeleteImage}
+              className="mt-2 text-xs text-red-400 flex items-center gap-1"
+            >
+              <Trash2 size={14} /> Remove Photo
+            </button>
+          )}
+
+          {uploading && (
+            <p className="text-xs mt-2 text-blue-400">Uploading...</p>
+          )}
+
+          {/* EXISTING SIDEBAR CONTENT */}
+          <h3 className="text-lg font-semibold text-white mt-4">
             {student.fullName}
           </h3>
           <p className="text-sm text-gray-400">ID: {student.studentId}</p>
-
           <span
             className={`mt-3 px-3 py-1 rounded-full text-xs font-bold ${
               student.isActive
@@ -113,7 +190,6 @@ export default function ProfileMenu({ student, onBack }) {
           >
             {student.isActive ? "ACTIVE" : "INACTIVE"}
           </span>
-
           {/* Profile Completion */}
           <div className="w-full mt-6">
             <p className="text-xs text-gray-400 mb-1">Profile Completion</p>

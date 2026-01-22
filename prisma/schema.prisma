@@ -19,6 +19,8 @@ model Admin {
   lastLoginAt DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  resetOtp         String?
+  resetOtpExpiry   DateTime?
 
   @@map("admins")
 }
@@ -39,6 +41,8 @@ model Staff {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   subjects    Subject[] @relation("TeacherSubjects")
+  resetOtp         String?
+  resetOtpExpiry   DateTime? 
 
   @@map("staff")
 }

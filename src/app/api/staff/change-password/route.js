@@ -13,15 +13,15 @@ export async function POST(request) {
       );
     }
 
-    const admin = await prisma.admin.findFirst({
+    const staff = await prisma.staff.findFirst({
       where: { email: { equals: email, mode: "insensitive" } },
     });
 
-    if (!admin) {
+    if (!staff) {
       return NextResponse.json({ error: "Email not found" }, { status: 404 });
     }
 
-    const isMatch = await bcrypt.compare(oldPassword, admin.password);
+    const isMatch = await bcrypt.compare(oldPassword, staff.password);
     if (!isMatch) {
       return NextResponse.json(
         { error: "Old password is incorrect" },
@@ -31,8 +31,8 @@ export async function POST(request) {
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    await prisma.admin.update({
-      where: { id: admin.id },
+    await prisma.staff.update({
+      where: { id: staff.id },
       data: { password: hashedPassword },
     });
 
@@ -40,7 +40,7 @@ export async function POST(request) {
       message: "Password changed successfully",
     });
   } catch (error) {
-    console.error("Admin change password error:", error);
+    console.error("staff change password error:", error);
     return NextResponse.json(
       { error: "Something went wrong" },
       { status: 500 },
