@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import { DepartmentService, StaffService, StudentService } from '../../../lib/api';
+import Eyebtn from '../../User/Eyebtn';
 
 function AddUserForm({ userType = 'student', onSuccess, onCancel }) {
   const [formData, setFormData] = useState({
@@ -28,6 +29,8 @@ function AddUserForm({ userType = 'student', onSuccess, onCancel }) {
   const [departments, setDepartments] = useState([]);
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loadingDepartments, setLoadingDepartments] = useState(true);
 
   useEffect(() => {
@@ -233,14 +236,26 @@ function AddUserForm({ userType = 'student', onSuccess, onCancel }) {
             <label className="block text-sm font-medium text-gray-300 mb-1">
               Password *
             </label>
-            <input
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-gray-600 rounded-md bg-[#1e1e26] text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              disabled={isLoading}
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                name="password"
+                value={formData.password}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 pr-10 border border-gray-600 rounded-md bg-[#1e1e26] text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                disabled={isLoading}
+              />
+              <div className="absolute right-0 top-4">
+                <Eyebtn 
+                  className="text-white"
+                  showEye={showPassword} 
+                  eyeToggle={(e) => {
+                    e.preventDefault();
+                    setShowPassword(!showPassword);
+                  }} 
+                />
+              </div>
+            </div>
             {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
           </div>
 
@@ -248,14 +263,25 @@ function AddUserForm({ userType = 'student', onSuccess, onCancel }) {
             <label className="block text-sm font-medium text-gray-300 mb-1">
               Confirm Password *
             </label>
-            <input
-              type="password"
-              name="confirmPassword"
-              value={formData.confirmPassword}
-              onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-gray-600 rounded-md bg-[#1e1e26] text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              disabled={isLoading}
-            />
+            <div className="relative">
+              <input
+                type={showConfirmPassword ? "text" : "password"}
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 pr-10 border border-gray-600 rounded-md bg-[#1e1e26] text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                disabled={isLoading}
+              />
+              <div className="absolute right-0 top-4">
+                <Eyebtn 
+                  showEye={showConfirmPassword} 
+                  eyeToggle={(e) => {
+                    e.preventDefault();
+                    setShowConfirmPassword(!showConfirmPassword);
+                  }} 
+                />
+              </div>
+            </div>
             {errors.confirmPassword && <p className="text-red-500 text-sm mt-1">{errors.confirmPassword}</p>}
           </div>
         </div>

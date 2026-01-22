@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { FiX, FiMessageCircle, FiSend } from 'react-icons/fi';
+import { useEffect, useState } from 'react';
+import { FiMessageCircle, FiSend, FiX } from 'react-icons/fi';
 
 const ViewAnnouncement = ({ announcement, onClose, currentUser }) => {
   const [queries, setQueries] = useState([]);
@@ -89,13 +89,13 @@ const ViewAnnouncement = ({ announcement, onClose, currentUser }) => {
   const canComment = currentUser?.role === 'STUDENT' && announcement?.type === 'QUESTION';
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overflow-y-auto">
+      <div className="bg-[#2d2d39] rounded-xl shadow-xl max-w-4xl w-full my-8 border border-[#25252b]">
         {/* Header */}
-        <div className="flex justify-between items-center p-6 border-b border-gray-200">
+        <div className="flex justify-between items-center p-6 border-b border-gray-700">
           <div className="flex-1">
-            <div className="flex items-center space-x-3 mb-2">
-              <h2 className="text-2xl font-bold text-gray-900">{announcement.title}</h2>
+            <div className="flex items-center flex-wrap gap-3 mb-2">
+              <h2 className="text-2xl font-bold text-white">{announcement.title}</h2>
               <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getTypeColor(announcement.type)}`}>
                 {announcement.type}
               </span>
@@ -103,20 +103,20 @@ const ViewAnnouncement = ({ announcement, onClose, currentUser }) => {
                 {announcement.visibility.replace('_', ' ')}
               </span>
             </div>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-400">
               Created on {formatDate(announcement.createdAt)}
             </p>
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-gray-400 hover:text-gray-200 transition-colors"
           >
             <FiX className="h-6 w-6" />
           </button>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto">
+        {/* Content - Scrollable */}
+        <div className="overflow-y-auto max-h-[calc(90vh-200px)]">
           <div className="p-6">
             {/* Image */}
             {announcement.imageUrl && (
@@ -131,16 +131,19 @@ const ViewAnnouncement = ({ announcement, onClose, currentUser }) => {
 
             {/* Rich Text Content */}
             <div 
-              className="prose max-w-none mb-8"
+              className="prose prose-invert max-w-none mb-8"
+              style={{
+                color: '#e5e7eb',
+              }}
               dangerouslySetInnerHTML={{ __html: announcement.content }}
             />
 
             {/* Queries Section */}
             {announcement.type === 'QUESTION' && (
-              <div className="border-t border-gray-200 pt-6">
+              <div className="border-t border-gray-700 pt-6">
                 <div className="flex items-center mb-4">
                   <FiMessageCircle className="h-5 w-5 text-gray-400 mr-2" />
-                  <h3 className="text-lg font-semibold text-gray-900">
+                  <h3 className="text-lg font-semibold text-white">
                     Queries ({queries.length})
                   </h3>
                 </div>
@@ -154,7 +157,7 @@ const ViewAnnouncement = ({ announcement, onClose, currentUser }) => {
                           value={newQuery}
                           onChange={(e) => setNewQuery(e.target.value)}
                           rows={3}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                          className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-[#1e1e26] text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                           placeholder="Ask a question or leave a comment..."
                           disabled={submitting}
                         />
@@ -162,7 +165,7 @@ const ViewAnnouncement = ({ announcement, onClose, currentUser }) => {
                       <button
                         type="submit"
                         disabled={!newQuery.trim() || submitting}
-                        className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                        className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
                       >
                         <FiSend className="h-4 w-4 mr-1" />
                         {submitting ? 'Posting...' : 'Post'}
@@ -175,25 +178,25 @@ const ViewAnnouncement = ({ announcement, onClose, currentUser }) => {
                 {loading ? (
                   <div className="text-center py-8">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto"></div>
-                    <p className="mt-2 text-gray-500">Loading queries...</p>
+                    <p className="mt-2 text-gray-400">Loading queries...</p>
                   </div>
                 ) : queries.length > 0 ? (
                   <div className="space-y-4">
                     {queries.map((query, index) => (
-                      <div key={query.id || index} className="bg-gray-50 rounded-lg p-4">
+                      <div key={query.id || index} className="bg-[#1e1e26] rounded-lg p-4 border border-gray-700">
                         <div className="flex justify-between items-start mb-2">
-                          <span className="font-medium text-gray-900">Student #{query.userId}</span>
-                          <span className="text-sm text-gray-500">
+                          <span className="font-medium text-white">Student #{query.userId}</span>
+                          <span className="text-sm text-gray-400">
                             {formatDate(query.createdAt)}
                           </span>
                         </div>
-                        <p className="text-gray-700 whitespace-pre-wrap">{query.content}</p>
+                        <p className="text-gray-300 whitespace-pre-wrap">{query.content}</p>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-8 text-gray-500">
-                    <FiMessageCircle className="h-12 w-12 mx-auto text-gray-300 mb-2" />
+                  <div className="text-center py-8 text-gray-400">
+                    <FiMessageCircle className="h-12 w-12 mx-auto text-gray-600 mb-2" />
                     <p>No queries yet. Be the first to ask a question!</p>
                   </div>
                 )}
@@ -203,11 +206,11 @@ const ViewAnnouncement = ({ announcement, onClose, currentUser }) => {
         </div>
 
         {/* Footer */}
-        <div className="border-t border-gray-200 p-6 bg-gray-50">
+        <div className="border-t border-gray-700 p-6 bg-[#25252b]">
           <div className="flex justify-end">
             <button
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              className="px-4 py-2 text-sm font-medium text-white bg-[#2d2d39] border border-gray-600 rounded-lg hover:bg-[#35353f] focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
             >
               Close
             </button>

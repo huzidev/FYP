@@ -1,6 +1,6 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useImperativeHandle, forwardRef } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useState } from "react";
 import { ApiError, StaffService } from "../../../lib/api";
 
 // Helper function to escape CSV fields
@@ -191,13 +191,13 @@ const StaffTable = forwardRef(function StaffTable(props, ref) {
                     <div className="flex space-x-2">
                       <button
                         onClick={() => router.push(`/staff/profile/${member.id}`)}
-                        className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
+                        className="px-3 py-1 bg-blue-500 text-white rounded cursor-pointer hover:bg-blue-600 text-sm"
                       >
                         View
                       </button>
                       <button
                         onClick={() => router.push(`/staff/edit/${member.id}`)}
-                        className="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-sm"
+                        className="px-3 py-1 bg-yellow-500 text-white rounded cursor-pointer hover:bg-yellow-600 text-sm"
                       >
                         Edit
                       </button>
