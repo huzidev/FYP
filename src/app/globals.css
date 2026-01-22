@@ -34,28 +34,6 @@ body {
   border-radius: 20px;
 }
 
-.box::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: 20px;
-  padding: 10px;
-  background: repeating-linear-gradient(
-    90deg,
-    #ff0057 0 10px,
-    transparent 10px 20px,
-    #7300ff 20px 30px,
-    transparent 30px 40px,
-    #00ffd5 40px 50px,
-    transparent 50px 60px,
-    #ffaa00 60px 70px,
-    transparent 70px 80px
-  );
-  background-size: 200% 100%;
-  animation: animateBorder 4s linear infinite;
-  z-index: 1;
-}
-
 .box > div {
   position: relative;
   z-index: 2;
@@ -76,28 +54,6 @@ body {
   position: relative;
   overflow: hidden;
   border-radius: 20px;
-}
-
-.box::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: 20px;
-  padding: 10px;
-  background: repeating-linear-gradient(
-    90deg,
-    #ff0057 0 10px,
-    transparent 10px 20px,
-    #7300ff 20px 30px,
-    transparent 30px 40px,
-    #00ffd5 40px 50px,
-    transparent 50px 60px,
-    #ffaa00 60px 70px,
-    transparent 70px 80px
-  );
-  background-size: 200% 100%;
-  animation: animateBorder 4s linear infinite;
-  z-index: 1;
 }
 
 .box > div {

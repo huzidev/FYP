@@ -1,28 +1,17 @@
 "use client";
 import Navbar from "@/Component/Nav";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const Page = () => {
-  const announcements = [
-    {
-      title: "Admissions Open",
-      date: "Oct 10, 2025",
-      desc: "Fall 2025 admissions are now open. Apply before Nov 30.",
-    },
-    {
-      title: "Fee Submission",
-      date: "Oct 15, 2025",
-      desc: "Last date for semester fee submission is Oct 25.",
-    },
-    {
-      title: "Holiday Notice",
-      date: "Oct 20, 2025",
-      desc: "Institute will remain closed on Oct 25 for public holiday.",
-    },
-  ];
-
+  const [announcements, setAnnouncements] = useState([]);
   const [current, setCurrent] = useState(0);
+  const sliderRef = useRef(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStartX, setDragStartX] = useState(0);
+  const [dragScrollLeft, setDragScrollLeft] = useState(0);
+
+  const stripHtml = (value = "") => value.replace(/<[^>]*>?/gm, "");
 
   useEffect(() => {
     // Check if user is authenticated and redirect to appropriate dashboard
@@ -39,11 +28,77 @@ const Page = () => {
     };
     checkAuth();
 
+    const fetchAnnouncements = async () => {
+      try {
+        const res = await fetch("/api/announcements?limit=5&type=ANNOUNCEMENT");
+        if (!res.ok) return;
+        const data = await res.json();
+        setAnnouncements(data.announcements || []);
+        setCurrent(0);
+      } catch (err) {
+        console.error("Failed to load announcements", err);
+      }
+    };
+
+    fetchAnnouncements();
+  }, []);
+
+  useEffect(() => {
+    if (!sliderRef.current || announcements.length === 0) return;
+
+    const slider = sliderRef.current;
     const interval = setInterval(() => {
-      setCurrent((prev) => (prev + 1) % announcements.length);
-    }, 4000);
+      const width = slider.clientWidth || 1;
+      setCurrent((prev) => {
+        const next = (prev + 1) % announcements.length;
+        slider.scrollTo({ left: next * width, behavior: "smooth" });
+        return next;
+      });
+    }, 7000);
+
     return () => clearInterval(interval);
-  }, [announcements.length]);
+  }, [announcements]);
+
+  const handleIndicatorClick = (idx) => {
+    if (!sliderRef.current) return;
+    const width = sliderRef.current.clientWidth || 1;
+    sliderRef.current.scrollTo({ left: idx * width, behavior: "smooth" });
+    setCurrent(idx);
+  };
+
+  const startDrag = (clientX) => {
+    if (!sliderRef.current) return;
+    setIsDragging(true);
+    setDragStartX(clientX);
+    setDragScrollLeft(sliderRef.current.scrollLeft);
+  };
+
+  const handleMouseDown = (e) => startDrag(e.clientX);
+  const handleTouchStart = (e) => startDrag(e.touches[0].clientX);
+
+  const handlePointerMove = (clientX) => {
+    if (!isDragging || !sliderRef.current) return;
+    const delta = clientX - dragStartX;
+    sliderRef.current.scrollLeft = dragScrollLeft - delta;
+  };
+
+  const handleMouseMove = (e) => {
+    if (isDragging) handlePointerMove(e.clientX);
+  };
+  const handleTouchMove = (e) => {
+    if (isDragging) handlePointerMove(e.touches[0].clientX);
+  };
+
+  const stopDrag = () => {
+    setIsDragging(false);
+  };
+
+  const handleScroll = () => {
+    if (!sliderRef.current) return;
+    const width = sliderRef.current.clientWidth || 1;
+    const nextIndex = Math.round(sliderRef.current.scrollLeft / width);
+    setCurrent(Math.min(nextIndex, Math.max(0, announcements.length - 1)));
+  };
 
   return (
     <div className="text-white bg-[#25252b] min-h-screen flex flex-col">
@@ -138,32 +193,77 @@ const Page = () => {
           Latest Announcements
         </h2>
 
-        <div className="max-w-3xl mx-auto relative overflow-hidden">
+        <div className="max-w-4xl mx-auto relative overflow-hidden">
           {/* -----Slider----- */}
           <div
-            className="flex transition-transform duration-700"
-            style={{ transform: `translateX(-${current * 100}%)` }}
+            ref={sliderRef}
+            className={`flex gap-4 overflow-x-auto snap-x snap-mandatory scroll-smooth select-none transition-none ${
+              isDragging ? "cursor-grabbing" : "cursor-grab"
+            }`}
+            style={{ scrollbarWidth: "none", WebkitUserSelect: "none", userSelect: "none" }}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={stopDrag}
+            onMouseLeave={stopDrag}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={stopDrag}
+            onScroll={handleScroll}
           >
-            {announcements.map((note, idx) => (
-              <div
-                key={idx}
-                className="min-w-full bg-[#2f2f37] p-6 rounded-lg shadow text-center"
-              >
-                <h3 className="text-xl font-semibold mb-2">{note.title}</h3>
-                <p className="text-sm text-gray-400 mb-2">{note.date}</p>
-                <p className="text-gray-300">{note.desc}</p>
+            {announcements.length === 0 && (
+              <div className="min-w-full bg-[#2f2f37] p-6 rounded-lg shadow text-center text-gray-400">
+                No announcements available yet.
               </div>
-            ))}
+            )}
+
+            {announcements.map((note, idx) => {
+              const plainContent = stripHtml(note.content || "");
+              const dateLabel = note.createdAt
+                ? new Date(note.createdAt).toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric",
+                  })
+                : "";
+
+              return (
+                <div
+                  key={idx}
+                  className="min-w-full snap-center flex-shrink-0 bg-gradient-to-br from-[#2f2f37] to-[#1f1f24] p-8 rounded-xl shadow-lg border border-gray-700 hover:border-blue-500 transition-colors duration-300"
+                  style={{ pointerEvents: isDragging ? "none" : "auto" }}
+                >
+                  <div className="flex flex-col h-full">
+                    <h3 className="text-2xl font-bold mb-3 text-blue-400 line-clamp-2">
+                      {note.title}
+                    </h3>
+                    {dateLabel && (
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4 flex items-center gap-1">
+                        📅 {dateLabel}
+                      </p>
+                    )}
+                    <p className="text-gray-300 text-base leading-relaxed flex-grow line-clamp-4 overflow-hidden">
+                      {plainContent}
+                    </p>
+                    <div className="mt-6 pt-4 border-t border-gray-600">
+                      <span className="inline-block text-xs text-gray-500 font-semibold">
+                        {`Slide ${idx + 1} of ${announcements.length}`}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
 
           <div className="flex justify-center mt-4 space-x-2">
             {announcements.map((_, idx) => (
               <button
                 key={idx}
-                onClick={() => setCurrent(idx)}
+                onClick={() => handleIndicatorClick(idx)}
                 className={`w-3 h-3 rounded-full ${
                   idx === current ? "bg-blue-500" : "bg-gray-500"
                 }`}
+                aria-label={`Go to announcement ${idx + 1}`}
               ></button>
             ))}
           </div>
