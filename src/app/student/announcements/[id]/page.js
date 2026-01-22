@@ -3,13 +3,14 @@
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
-  FiArrowLeft,
-  FiCalendar,
-  FiClock,
-  FiMessageCircle,
-  FiSend,
-  FiUser,
-} from "react-icons/fi";
+  ArrowLeft,
+  Calendar,
+  Clock,
+  MessageCircle,
+  Send,
+  User,
+  Sparkles,
+} from "lucide-react";
 import Header from "../../../../Component/Header";
 
 export default function AnnouncementDetailPage() {
@@ -191,7 +192,7 @@ export default function AnnouncementDetailPage() {
             onClick={() => router.back()}
             className="flex items-center text-gray-600 hover:text-gray-900 mb-6 transition-colors"
           >
-            <FiArrowLeft className="mr-2" />
+            <ArrowLeft className="mr-2" />
             Back to Announcements
           </button>
 
@@ -226,11 +227,11 @@ export default function AnnouncementDetailPage() {
                   </h1>
                   <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
                     <div className="flex items-center">
-                      <FiUser className="mr-2" />
+                      <User className="mr-2" />
                       <span>Posted by {announcement.createdByType}</span>
                     </div>
                     <div className="flex items-center">
-                      <FiCalendar className="mr-2" />
+                      <Calendar className="mr-2" />
                       <span>{formatDate(announcement.createdAt)}</span>
                     </div>
                   </div>
@@ -272,7 +273,7 @@ export default function AnnouncementDetailPage() {
             {summary && (
               <div className="mx-6 mb-6 p-6 from-purple-50 to-indigo-50 rounded-lg border border-purple-200">
                 <div className="flex items-center mb-3">
-                  <FiSparkles className="text-purple-600 mr-2" />
+                  <Sparkles className="text-purple-600 mr-2" />
                   <h3 className="text-lg font-semibold text-gray-900">
                     AI Summary
                   </h3>
@@ -287,7 +288,7 @@ export default function AnnouncementDetailPage() {
             <div className="mt-6 bg-white rounded-lg shadow-sm border border-gray-200">
               <div className="p-6 border-b border-gray-200">
                 <div className="flex items-center">
-                  <FiMessageCircle className="text-indigo-600 mr-2" />
+                  <MessageCircle className="text-indigo-600 mr-2" />
                   <h2 className="text-xl font-semibold text-gray-900">
                     Questions & Queries ({queries.length})
                   </h2>
@@ -311,7 +312,7 @@ export default function AnnouncementDetailPage() {
                       disabled={submittingQuery || !newQuery.trim()}
                       className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <FiSend className="mr-2" />
+                      <Send className="mr-2" />
                       {submittingQuery ? "Sending..." : "Send"}
                     </button>
                   </div>
@@ -333,13 +334,13 @@ export default function AnnouncementDetailPage() {
                       >
                         <div className="flex items-start justify-between mb-2">
                           <div className="flex items-center text-sm text-gray-600">
-                            <FiUser className="mr-2" />
+                            <User className="mr-2" />
                             <span className="font-medium">
                               Student #{query.userId}
                             </span>
                           </div>
                           <div className="flex items-center text-xs text-gray-500">
-                            <FiClock className="mr-1" />
+                            <Clock className="mr-1" />
                             {formatDate(query.createdAt)}
                           </div>
                         </div>
