@@ -169,9 +169,6 @@ const AnnouncementsTable = ({ refreshKey, onEdit, onView }) => {
                         <div className="text-sm font-medium text-gray-900">
                           {announcement.title}
                         </div>
-                        <div className="text-sm text-gray-500 truncate max-w-xs">
-                          {announcement.content.replace(/<[^>]*>/g, '').substring(0, 50)}...
-                        </div>
                       </div>
                     </div>
                   </td>
