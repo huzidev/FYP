@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { FiArrowLeft, FiCalendar, FiClock, FiMessageCircle, FiSparkles, FiUser } from 'react-icons/fi';
+import { FiArrowLeft, FiCalendar, FiClock, FiMessageCircle, FiUser } from 'react-icons/fi';
 
 export default function StaffAnnouncementDetailPage() {
   const params = useParams();
@@ -206,7 +206,6 @@ export default function StaffAnnouncementDetailPage() {
               disabled={summarizing}
               className="flex items-center px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:from-purple-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <FiSparkles className="mr-2" />
               {summarizing ? 'Summarizing...' : 'Summarize with AI'}
             </button>
           </div>
@@ -215,7 +214,6 @@ export default function StaffAnnouncementDetailPage() {
           {summary && (
             <div className="mx-6 mb-6 p-6 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg border border-purple-200">
               <div className="flex items-center mb-3">
-                <FiSparkles className="text-purple-600 mr-2" />
                 <h3 className="text-lg font-semibold text-gray-900">AI Summary</h3>
               </div>
               <p className="text-gray-700 leading-relaxed">{summary}</p>
