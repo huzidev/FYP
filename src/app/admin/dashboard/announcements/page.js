@@ -4,7 +4,7 @@ import AnnouncementsTable from '@/Component/Admin/Announcement/AnnouncementsTabl
 import CreateAnnouncementForm from '@/Component/Admin/Announcement/CreateAnnouncementForm';
 import ViewAnnouncement from '@/Component/Admin/Announcement/ViewAnnouncement';
 import Modal from '@/Component/Common/Modal';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { FiPlus } from 'react-icons/fi';
 
 export default function AnnouncementsPage() {
@@ -13,12 +13,40 @@ export default function AnnouncementsPage() {
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [selectedAnnouncement, setSelectedAnnouncement] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [stats, setStats] = useState({
+    total: 0,
+    questions: 0,
+    announcements: 0,
+    active: 0
+  });
   
   // Mock current user - replace with actual auth context
   const currentUser = {
     id: 1,
     role: 'ADMIN',
     type: 'ADMIN'
+  };
+
+  // Fetch stats on mount and when refreshKey changes
+  useEffect(() => {
+    fetchStats();
+  }, [refreshKey]);
+
+  const fetchStats = async () => {
+    try {
+      const response = await fetch('/api/announcements?stats=true');
+      if (response.ok) {
+        const data = await response.json();
+        setStats({
+          total: data.total || 0,
+          questions: data.questions || 0,
+          announcements: data.announcements || 0,
+          active: data.active || 0
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+    }
   };
 
   const handleCreateNew = () => {
@@ -119,7 +147,7 @@ export default function AnnouncementsPage() {
           <div className="flex items-center">
             <div className="flex-1">
               <p className="text-sm font-medium text-gray-600">Total</p>
-              <p className="text-2xl font-bold text-gray-900">-</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
             </div>
             <div className="bg-indigo-100 p-3 rounded-full">
               <div className="w-6 h-6 bg-indigo-600 rounded"></div>
@@ -131,7 +159,7 @@ export default function AnnouncementsPage() {
           <div className="flex items-center">
             <div className="flex-1">
               <p className="text-sm font-medium text-gray-600">Questions</p>
-              <p className="text-2xl font-bold text-blue-900">-</p>
+              <p className="text-2xl font-bold text-blue-900">{stats.questions}</p>
             </div>
             <div className="bg-blue-100 p-3 rounded-full">
               <div className="w-6 h-6 bg-blue-600 rounded"></div>
@@ -143,7 +171,7 @@ export default function AnnouncementsPage() {
           <div className="flex items-center">
             <div className="flex-1">
               <p className="text-sm font-medium text-gray-600">Announcements</p>
-              <p className="text-2xl font-bold text-green-900">-</p>
+              <p className="text-2xl font-bold text-green-900">{stats.announcements}</p>
             </div>
             <div className="bg-green-100 p-3 rounded-full">
               <div className="w-6 h-6 bg-green-600 rounded"></div>
@@ -155,7 +183,7 @@ export default function AnnouncementsPage() {
           <div className="flex items-center">
             <div className="flex-1">
               <p className="text-sm font-medium text-gray-600">Active</p>
-              <p className="text-2xl font-bold text-emerald-900">-</p>
+              <p className="text-2xl font-bold text-emerald-900">{stats.active}</p>
             </div>
             <div className="bg-emerald-100 p-3 rounded-full">
               <div className="w-6 h-6 bg-emerald-600 rounded"></div>

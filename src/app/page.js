@@ -50,7 +50,7 @@ const Page = () => {
       <Navbar />
 
       {/* --------Portal------ */}
-      <section className="flex flex-col items-center justify-center flex-grow text-center py-20 px-6 text-white bg-[#25252b]">
+      <section className="flex flex-col items-center justify-center text-center py-20 px-6 text-white bg-[#25252b]">
         <h1 className="text-5xl font-bold mb-6">
           Welcome to Institute CMS Portal
         </h1>

@@ -1,8 +1,8 @@
 "use client";
 
-import SidebarToggle from "./SidebarToggle";
-import LogoSection from "./LogoSection";
 import ActionIcons from "./ActionIcons";
+import LogoSection from "./LogoSection";
+import SidebarToggle from "./SidebarToggle";
 
 export default function Header({ onMenuClick, onProfileClick }) {
   return (

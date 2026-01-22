@@ -7,12 +7,12 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
 
   return (
-    <nav className="w-full fixed top-0 left-0 bg-transparent z-50 shadow-sm">
+    <nav className="w-full py-4 fixed top-0 left-0 bg-transparent z-50 shadow-sm">
       <div className="max-w-7xl mx-auto px-6 flex justify-between items-center h-16">
         {/* Logo */}
         <div className="flex items-center">
           <Link href="/">
-            <Logo width={60} height={50} className="cursor-pointer" />
+            <Logo width={100} height={50} className="cursor-pointer" />
           </Link>
           
         </div>

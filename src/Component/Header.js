@@ -1,7 +1,6 @@
 "use client";
-import { motion } from "framer-motion";
-import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import Logo from "./Logo";
 
 export default function Header() {

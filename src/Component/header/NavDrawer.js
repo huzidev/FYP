@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { X } from "lucide-react";
+import Link from "next/link";
 
 export default function NavDrawer({ open, onClose }) {
   return (
@@ -19,6 +19,9 @@ export default function NavDrawer({ open, onClose }) {
       <nav className="flex flex-col p-4 gap-3 text-white">
         <Link href="/dashboard" className="nav-link">
           Dashboard
+        </Link>
+        <Link href="/student/announcements" className="nav-link">
+          Announcements
         </Link>
         <Link href="/" className="nav-link">
           Home Site

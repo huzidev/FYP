@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import { NextResponse } from 'next/server';
 
 const prisma = new PrismaClient();
 
@@ -10,6 +10,50 @@ export async function GET(request) {
     const type = searchParams.get('type');
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
+    const stats = searchParams.get('stats') === 'true';
+    const createdBy = searchParams.get('createdBy');
+    const createdByType = searchParams.get('createdByType');
+
+    // Handle stats request
+    if (stats) {
+      let whereClause = {};
+
+      // Filter by creator if provided (for staff stats)
+      if (createdBy && createdByType) {
+        whereClause.createdById = parseInt(createdBy);
+        whereClause.createdByType = createdByType;
+      }
+
+      const [total, questions, announcements, active, totalQueries] = await Promise.all([
+        prisma.announcement.count({ where: whereClause }),
+        prisma.announcement.count({ 
+          where: { ...whereClause, type: 'QUESTION' } 
+        }),
+        prisma.announcement.count({ 
+          where: { ...whereClause, type: 'ANNOUNCEMENT' } 
+        }),
+        prisma.announcement.count({ 
+          where: { ...whereClause, isActive: true } 
+        }),
+        prisma.announcementQuery.count({
+          where: createdBy && createdByType ? {
+            announcement: {
+              createdById: parseInt(createdBy),
+              createdByType: createdByType
+            }
+          } : {}
+        })
+      ]);
+
+      return NextResponse.json({
+        total,
+        questions,
+        announcements,
+        active,
+        myAnnouncements: total,
+        totalQueries
+      });
+    }
 
     let whereClause = {
       isActive: true,
