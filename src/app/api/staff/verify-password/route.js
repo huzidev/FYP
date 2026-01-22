@@ -13,7 +13,7 @@ export async function POST(request) {
       );
     }
 
-    const admin = await prisma.admin.findFirst({
+    const staff = await prisma.staff.findFirst({
       where: {
         email: {
           equals: email.trim(),
@@ -22,11 +22,11 @@ export async function POST(request) {
       },
     });
 
-    if (!admin) {
+    if (!staff) {
       return NextResponse.json({ error: "Email not found" }, { status: 404 });
     }
 
-    const isMatch = await bcrypt.compare(oldPassword, admin.password);
+    const isMatch = await bcrypt.compare(oldPassword, staff.password);
 
     if (!isMatch) {
       return NextResponse.json(
@@ -37,7 +37,7 @@ export async function POST(request) {
 
     return NextResponse.json({
       message: "Verified",
-      adminId: admin.id,
+      staffId: staff.id,
     });
   } catch (error) {
     console.error("Verify old password error:", error);
