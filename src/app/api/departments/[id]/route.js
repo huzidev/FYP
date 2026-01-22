@@ -4,10 +4,18 @@ import { NextResponse } from 'next/server';
 // GET /api/departments/[id] - Get department by ID
 export async function GET(request, { params }) {
   try {
-    const { id } = params;
+    const { id } = await params;
+    const numericId = parseInt(id, 10);
+
+    if (!numericId || Number.isNaN(numericId)) {
+      return NextResponse.json(
+        { error: 'Department id is required and must be a number' },
+        { status: 400 }
+      );
+    }
 
     const department = await prisma.department.findUnique({
-      where: { id: parseInt(id) },
+      where: { id: numericId },
       include: {
         students: {
           select: {
@@ -57,13 +65,22 @@ export async function GET(request, { params }) {
 // PUT /api/departments/[id] - Update department
 export async function PUT(request, { params }) {
   try {
-    const { id } = params;
+    const numericId = parseInt(params?.id, 10);
     const body = await request.json();
-    const { name, code, description, isActive } = body;
+    const { name, code, description, isActive, level } = body;
+
+    const allowedLevels = ["BACHELOR", "MASTER"];
 
     // Check if department exists
+    if (!numericId || Number.isNaN(numericId)) {
+      return NextResponse.json(
+        { error: 'Department id is required and must be a number' },
+        { status: 400 }
+      );
+    }
+
     const existingDepartment = await prisma.department.findUnique({
-      where: { id: parseInt(id) },
+      where: { id: numericId },
     });
 
     if (!existingDepartment) {
@@ -73,14 +90,29 @@ export async function PUT(request, { params }) {
       );
     }
 
+    if (level && !allowedLevels.includes(level)) {
+      return NextResponse.json(
+        { error: 'Invalid department level' },
+        { status: 400 }
+      );
+    }
+
+    if (isActive !== undefined && typeof isActive !== 'boolean') {
+      return NextResponse.json(
+        { error: 'Invalid active status' },
+        { status: 400 }
+      );
+    }
+
     // Update department
     const department = await prisma.department.update({
-      where: { id: parseInt(id) },
+      where: { id: numericId },
       data: {
         name,
         code,
         description,
         isActive,
+        level,
       },
       include: {
         _count: {
@@ -108,11 +140,18 @@ export async function PUT(request, { params }) {
 // DELETE /api/departments/[id] - Delete department
 export async function DELETE(request, { params }) {
   try {
-    const { id } = params;
+    const numericId = parseInt(params?.id, 10);
+
+    if (!numericId || Number.isNaN(numericId)) {
+      return NextResponse.json(
+        { error: 'Department id is required and must be a number' },
+        { status: 400 }
+      );
+    }
 
     // Check if department exists
     const existingDepartment = await prisma.department.findUnique({
-      where: { id: parseInt(id) },
+      where: { id: numericId },
       include: {
         _count: {
           select: {
@@ -146,7 +185,7 @@ export async function DELETE(request, { params }) {
 
     // Delete department
     await prisma.department.delete({
-      where: { id: parseInt(id) },
+      where: { id: numericId },
     });
 
     return NextResponse.json({

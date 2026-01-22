@@ -421,8 +421,15 @@ export class StudentService {
 }
 
 export class DepartmentService {
-  static async getAll() {
-    return api.get('/departments');
+  static async getAll(params = {}) {
+    const queryParams = new URLSearchParams();
+    if (params.search) queryParams.append('search', params.search);
+    if (typeof params.isActive === 'boolean') {
+      queryParams.append('isActive', params.isActive);
+    }
+
+    const queryString = queryParams.toString();
+    return api.get(`/departments${queryString ? `?${queryString}` : ''}`);
   }
 
   static async getById(id) {

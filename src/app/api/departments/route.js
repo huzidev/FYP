@@ -47,12 +47,30 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { name, code, description } = body;
+    const { name, code, description, level, isActive } = body;
+
+    const allowedLevels = ["BACHELOR", "MASTER"];
+    const departmentLevel = level || "BACHELOR";
+    const isActiveFlag = typeof isActive === "boolean" ? isActive : true;
 
     // Validation
     if (!name || !code) {
       return NextResponse.json(
         { error: 'Name and code are required' },
+        { status: 400 }
+      );
+    }
+
+    if (level && !allowedLevels.includes(level)) {
+      return NextResponse.json(
+        { error: 'Invalid department level' },
+        { status: 400 }
+      );
+    }
+
+    if (isActive !== undefined && typeof isActive !== 'boolean') {
+      return NextResponse.json(
+        { error: 'Invalid active status' },
         { status: 400 }
       );
     }
@@ -80,6 +98,8 @@ export async function POST(request) {
         name,
         code,
         description,
+        level: departmentLevel,
+        isActive: isActiveFlag,
       },
       include: {
         _count: {
