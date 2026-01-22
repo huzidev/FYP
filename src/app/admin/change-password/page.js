@@ -1,6 +1,6 @@
 "use client";
 import ChangePasswordComponent from "../../../Component/ChangePasswordComponent";
 
-const AdminChangePassword = () => {
+export default function AdminChangePassword() {
   return <ChangePasswordComponent userType="admin" />;
-};
+}

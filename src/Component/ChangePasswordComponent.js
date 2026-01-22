@@ -50,7 +50,8 @@ const ChangePasswordComponent = ({ userType }) => {
 
       const data = await res.json();
       if (!res.ok) {
-        toast.error(data.error || "Invalid email or password");
+        const errorMsg = data?.error || data?.message || "Invalid email or password";
+        toast.error(typeof errorMsg === "string" ? errorMsg : "Invalid email or password");
         return;
       }
 
@@ -108,7 +109,8 @@ const ChangePasswordComponent = ({ userType }) => {
 
       const data = await res.json();
       if (!res.ok) {
-        toast.error(data.error || "Failed to change password");
+        const errorMsg = data?.error || data?.message || "Failed to change password";
+        toast.error(typeof errorMsg === "string" ? errorMsg : "Failed to change password");
         return;
       }
 
@@ -143,7 +145,7 @@ const ChangePasswordComponent = ({ userType }) => {
                     Email Address
                   </label>
                   <div className="relative">
-                    <MdEmail className="absolute left-3 top-3 text-gray-500" size={20} />
+                    <MdEmail className="absolute left-3 top-4 text-gray-500" size={20} />
                     <input
                       type="email"
                       value={email}
@@ -159,7 +161,7 @@ const ChangePasswordComponent = ({ userType }) => {
                     Current Password
                   </label>
                   <div className="relative">
-                    <RiLockPasswordLine className="absolute left-3 top-3 text-gray-500" size={20} />
+                    <RiLockPasswordLine className="absolute left-3 top-4 text-gray-500" size={20} />
                     <input
                       type={showOldPassword ? "text" : "password"}
                       value={oldPassword}
@@ -170,7 +172,7 @@ const ChangePasswordComponent = ({ userType }) => {
                     <button
                       type="button"
                       onClick={() => setShowOldPassword(!showOldPassword)}
-                      className="absolute right-3 top-3 text-gray-500 hover:text-gray-300 transition"
+                      className="absolute right-1 top-4 text-gray-500 hover:text-gray-300 transition"
                     >
                       <Eyebtn show={showOldPassword} />
                     </button>
@@ -180,7 +182,7 @@ const ChangePasswordComponent = ({ userType }) => {
                 <button
                   onClick={verifyOldPassword}
                   disabled={isLoading}
-                  className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg transition duration-200 flex items-center justify-center gap-2"
+                  className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer text-white font-bold py-3 px-4 rounded-lg transition duration-200 flex items-center justify-center gap-2"
                 >
                   {isLoading ? (
                     <>
@@ -202,7 +204,7 @@ const ChangePasswordComponent = ({ userType }) => {
                     New Password
                   </label>
                   <div className="relative">
-                    <RiLockPasswordLine className="absolute left-3 top-3 text-gray-500" size={20} />
+                    <RiLockPasswordLine className="absolute left-3 top-4 text-gray-500" size={20} />
                     <input
                       type={showNewPassword ? "text" : "password"}
                       value={newPassword}
@@ -213,7 +215,7 @@ const ChangePasswordComponent = ({ userType }) => {
                     <button
                       type="button"
                       onClick={() => setShowNewPassword(!showNewPassword)}
-                      className="absolute right-3 top-3 text-gray-500 hover:text-gray-300 transition"
+                      className="absolute right-1 top-4 text-gray-500 hover:text-gray-300 transition"
                     >
                       <Eyebtn show={showNewPassword} />
                     </button>
@@ -225,7 +227,7 @@ const ChangePasswordComponent = ({ userType }) => {
                     Confirm Password
                   </label>
                   <div className="relative">
-                    <RiLockPasswordLine className="absolute left-3 top-3 text-gray-500" size={20} />
+                    <RiLockPasswordLine className="absolute left-3 top-4 text-gray-500" size={20} />
                     <input
                       type={showConfirmPassword ? "text" : "password"}
                       value={confirmPassword}
@@ -236,7 +238,7 @@ const ChangePasswordComponent = ({ userType }) => {
                     <button
                       type="button"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute right-3 top-3 text-gray-500 hover:text-gray-300 transition"
+                      className="absolute right-1 top-4 text-gray-500 hover:text-gray-300 transition"
                     >
                       <Eyebtn show={showConfirmPassword} />
                     </button>
@@ -246,7 +248,7 @@ const ChangePasswordComponent = ({ userType }) => {
                 <button
                   onClick={changePassword}
                   disabled={isLoading}
-                  className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg transition duration-200 flex items-center justify-center gap-2"
+                  className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer text-white font-bold py-3 px-4 rounded-lg transition duration-200 flex items-center justify-center gap-2"
                 >
                   {isLoading ? (
                     <>

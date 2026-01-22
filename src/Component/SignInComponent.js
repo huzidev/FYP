@@ -93,7 +93,19 @@ const SignInComponent = ({ userType }) => {
 
       let errorMessage = "Login failed. Please try again.";
 
-      if (error.message) {
+      // Handle ApiError from api.js
+      if (error?.data?.error) {
+        // Error from API with error field
+        errorMessage = error.data.error;
+      } else if (error?.name === "ApiError" && error?.data) {
+        // ApiError object - try to extract message
+        if (typeof error.data === "object") {
+          errorMessage = error.data.error || error.data.message || error.message || errorMessage;
+        } else if (typeof error.data === "string") {
+          errorMessage = error.data;
+        }
+      } else if (error?.message && error.message !== "[object Object]") {
+        // Generic error message
         errorMessage = error.message;
       }
 
@@ -103,6 +115,8 @@ const SignInComponent = ({ userType }) => {
       setIsLoading(false);
     }
   };
+
+    console.log("SW what is errors", errors);
 
   const forgotPasswordPath = `/${userType}/forgot-password`;
   const changePasswordPath = `/${userType}/change-password`;
@@ -136,7 +150,7 @@ const SignInComponent = ({ userType }) => {
                   Email Address
                 </label>
                 <div className="relative">
-                  <MdEmail className="absolute left-3 top-3 text-gray-500" size={20} />
+                  <MdEmail className="absolute left-3 top-4 text-gray-500" size={20} />
                   <input
                     type="email"
                     value={email}
@@ -158,7 +172,7 @@ const SignInComponent = ({ userType }) => {
                   Password
                 </label>
                 <div className="relative">
-                  <RiLockPasswordLine className="absolute left-3 top-3 text-gray-500" size={20} />
+                  <RiLockPasswordLine className="absolute left-3 top-4 text-gray-500" size={20} />
                   <input
                     type={showEye ? "text" : "password"}
                     value={password}
@@ -170,7 +184,7 @@ const SignInComponent = ({ userType }) => {
                   />
                   <button
                     onClick={eyeToggle}
-                    className="absolute right-3 top-3 text-gray-500 hover:text-gray-300 transition"
+                    className="absolute right-1 top-4 text-gray-500 hover:text-gray-300 transition"
                   >
                     <Eyebtn show={showEye} />
                   </button>
@@ -184,7 +198,7 @@ const SignInComponent = ({ userType }) => {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg transition duration-200 flex items-center justify-center gap-2"
+                className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer text-white font-bold py-3 px-4 rounded-lg transition duration-200 flex items-center justify-center gap-2"
               >
                 {isLoading ? (
                   <>

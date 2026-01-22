@@ -143,6 +143,8 @@ export async function POST(request) {
       }
     }
 
+    console.log("SW what is student ID", finalStudentId);
+
     // Check if student already exists
     const existingStudent = await prisma.student.findFirst({
       where: {

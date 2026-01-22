@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from 'react';
-import { ApiError, DepartmentService, StaffService, StudentService } from '../../../lib/api';
+import { toast } from 'react-toastify';
+import { DepartmentService, StaffService, StudentService } from '../../../lib/api';
 
 function AddUserForm({ userType = 'student', onSuccess, onCancel }) {
   const [formData, setFormData] = useState({
@@ -161,11 +162,24 @@ function AddUserForm({ userType = 'student', onSuccess, onCancel }) {
 
     } catch (error) {
       console.error('Error creating user:', error);
-      if (error instanceof ApiError) {
-        setErrors({ general: error.message });
-      } else {
-        setErrors({ general: 'Failed to create user. Please try again.' });
+      
+      let errorMessage = 'Failed to create user. Please try again.';
+      
+      // Extract error message from API response
+      if (error?.data?.error) {
+        errorMessage = error.data.error;
+      } else if (error?.name === "ApiError" && error?.data) {
+        if (typeof error.data === "object") {
+          errorMessage = error.data.error || error.data.message || error.message || errorMessage;
+        } else if (typeof error.data === "string") {
+          errorMessage = error.data;
+        }
+      } else if (error?.message && error.message !== "[object Object]") {
+        errorMessage = error.message;
       }
+      
+      setErrors({ general: errorMessage });
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }

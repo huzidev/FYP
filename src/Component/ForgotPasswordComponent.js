@@ -41,7 +41,8 @@ const ForgotPasswordComponent = ({ userType }) => {
 
       const data = await res.json();
       if (!res.ok) {
-        toast.error(data.error || "Failed to send OTP");
+        const errorMsg = data?.error || data?.message || "Failed to send OTP";
+        toast.error(typeof errorMsg === "string" ? errorMsg : "Failed to send OTP");
         return;
       }
 
@@ -78,7 +79,8 @@ const ForgotPasswordComponent = ({ userType }) => {
 
       const data = await res.json();
       if (!res.ok) {
-        toast.error(data.error || "Invalid OTP");
+        const errorMsg = data?.error || data?.message || "Invalid OTP";
+        toast.error(typeof errorMsg === "string" ? errorMsg : "Invalid OTP");
         return;
       }
 
@@ -126,7 +128,8 @@ const ForgotPasswordComponent = ({ userType }) => {
 
       const data = await res.json();
       if (!res.ok) {
-        toast.error(data.error || "Failed to reset password");
+        const errorMsg = data?.error || data?.message || "Failed to reset password";
+        toast.error(typeof errorMsg === "string" ? errorMsg : "Failed to reset password");
         return;
       }
 
@@ -161,7 +164,7 @@ const ForgotPasswordComponent = ({ userType }) => {
                     Email Address
                   </label>
                   <div className="relative">
-                    <MdEmail className="absolute left-3 top-3 text-gray-500" size={20} />
+                    <MdEmail className="absolute left-3 top-4 text-gray-500" size={20} />
                     <input
                       type="email"
                       value={email}
@@ -175,7 +178,7 @@ const ForgotPasswordComponent = ({ userType }) => {
                 <button
                   onClick={sendOtp}
                   disabled={isLoading}
-                  className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg transition duration-200 flex items-center justify-center gap-2"
+                  className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer text-white font-bold py-3 px-4 rounded-lg transition duration-200 flex items-center justify-center gap-2"
                 >
                   {isLoading ? (
                     <>
@@ -210,7 +213,7 @@ const ForgotPasswordComponent = ({ userType }) => {
                 <button
                   onClick={verifyOtp}
                   disabled={isLoading}
-                  className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg transition duration-200 flex items-center justify-center gap-2"
+                  className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer text-white font-bold py-3 px-4 rounded-lg transition duration-200 flex items-center justify-center gap-2"
                 >
                   {isLoading ? (
                     <>
@@ -232,7 +235,7 @@ const ForgotPasswordComponent = ({ userType }) => {
                     New Password
                   </label>
                   <div className="relative">
-                    <RiLockPasswordLine className="absolute left-3 top-3 text-gray-500" size={20} />
+                    <RiLockPasswordLine className="absolute left-3 top-4 text-gray-500" size={20} />
                     <input
                       type="password"
                       value={newPassword}
@@ -248,7 +251,7 @@ const ForgotPasswordComponent = ({ userType }) => {
                     Confirm Password
                   </label>
                   <div className="relative">
-                    <RiLockPasswordLine className="absolute left-3 top-3 text-gray-500" size={20} />
+                    <RiLockPasswordLine className="absolute left-3 top-4 text-gray-500" size={20} />
                     <input
                       type="password"
                       value={confirmPassword}
@@ -262,7 +265,7 @@ const ForgotPasswordComponent = ({ userType }) => {
                 <button
                   onClick={resetPassword}
                   disabled={isLoading}
-                  className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg transition duration-200 flex items-center justify-center gap-2"
+                  className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer text-white font-bold py-3 px-4 rounded-lg transition duration-200 flex items-center justify-center gap-2"
                 >
                   {isLoading ? (
                     <>

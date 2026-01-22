@@ -4,8 +4,9 @@ import AddStudentForm from "@/Component/Admin/Common/addUserForm";
 import BulkFileUpload from "@/Component/Admin/Common/bulkFileUpload";
 import StudentsTable from "@/Component/Admin/Student/StudentsTable";
 import Modal from "@/Component/Common/Modal";
-import { StudentService, ApiResponse } from "@/lib/api";
-import { useState, useRef } from "react";
+import { ApiResponse, StudentService } from "@/lib/api";
+import { useRef, useState } from "react";
+import { toast } from "react-toastify";
 
 // Component to display bulk operation results
 function BulkResultDisplay({ result, operationType, onClose }) {
@@ -103,8 +104,9 @@ export default function StudentsPage() {
   };
 
   const handleSuccess = (data) => {
-    setShowSuccess(true);
+    toast.success("Student created successfully!");
     setRefreshKey(prev => prev + 1);
+    handleClose();
   };
 
   const handleCreateNew = () => {
@@ -203,37 +205,15 @@ export default function StudentsPage() {
       <Modal
         isOpen={isAddUploadOpen}
         onClose={handleClose}
-        title={showSuccess ? "Student Created Successfully" : "Create Student"}
+        title="Create Student"
         size="xl"
       >
-        {showSuccess ? (
-          <div className="space-y-4">
-            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
-              Student created successfully!
-            </div>
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={handleClose}
-                className="px-4 py-2 bg-[#1e1e26] text-gray-300 rounded-lg hover:bg-[#25252b] transition"
-              >
-                Close Modal
-              </button>
-              <button
-                onClick={handleCreateNew}
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition"
-              >
-                Create New Student
-              </button>
-            </div>
-          </div>
-        ) : (
-          <AddStudentForm
-            key={formKey}
-            userType="student"
-            onSuccess={handleSuccess}
-            onCancel={handleClose}
-          />
-        )}
+        <AddStudentForm
+          key={formKey}
+          userType="student"
+          onSuccess={handleSuccess}
+          onCancel={handleClose}
+        />
       </Modal>
 
       <Modal
