@@ -1,6 +1,6 @@
+import { sendOtpEmail } from "@/lib/email";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
-import { sendOtpEmail } from "@/lib/email";
 
 function generateOtp() {
   return Math.floor(100000 + Math.random() * 900000).toString();

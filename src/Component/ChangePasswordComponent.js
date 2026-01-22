@@ -101,10 +101,15 @@ const ChangePasswordComponent = ({ userType }) => {
           ? "/api/staff/change-password"
           : "/api/students/change-password";
 
+      const bodyData = { newPassword };
+      if (userType === "admin") bodyData.adminId = userId;
+      else if (userType === "staff") bodyData.staffId = userId;
+      else bodyData.studentId = userId;
+
       const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ adminId: userId, staffId: userId, studentId: userId, newPassword }),
+        body: JSON.stringify(bodyData),
       });
 
       const data = await res.json();
