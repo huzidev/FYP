@@ -26,23 +26,24 @@ model Admin {
 }
 
 model Staff {
-  id             Int       @id @default(autoincrement())
-  fullName       String
-  email          String    @unique
-  password       String
-  role           StaffRole
-  staffId        String    @unique
-  phone          String?
-  address        String?
-  salary         Float?
-  hireDate       DateTime?
-  isActive       Boolean   @default(true)
-  lastLoginAt    DateTime?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-  resetOtp       String?
-  resetOtpExpiry DateTime?
-  subjects       Subject[] @relation("TeacherSubjects")
+  id              Int              @id @default(autoincrement())
+  fullName        String
+  email           String           @unique
+  password        String
+  role            StaffRole
+  staffId         String           @unique
+  phone           String?
+  address         String?
+  salary          Float?
+  hireDate        DateTime?
+  isActive        Boolean          @default(true)
+  lastLoginAt     DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  resetOtp        String?
+  resetOtpExpiry  DateTime?
+  teacherSubjects TeacherSubject[]
+  enrollments     Enrollment[]
 
   @@map("staff")
 }
@@ -91,36 +92,61 @@ model Department {
 }
 
 model Subject {
-  id           Int           @id @default(autoincrement())
-  name         String
-  code         String        @unique
-  description  String?
-  creditHours  Int           @default(3)
-  semester     Int?
-  level        StudentLevel?
-  isActive     Boolean       @default(true)
-  departmentId Int
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  enrollments  Enrollment[]
-  department   Department    @relation(fields: [departmentId], references: [id])
-  teachers     Staff[]       @relation("TeacherSubjects")
+  id              Int              @id @default(autoincrement())
+  name            String
+  code            String           @unique
+  description     String?
+  creditHours     Int              @default(3)
+  semester        Int?
+  level           StudentLevel?
+  isActive        Boolean          @default(true)
+  departmentId    Int
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  enrollments     Enrollment[]
+  department      Department       @relation(fields: [departmentId], references: [id])
+  teacherSubjects TeacherSubject[]
 
   @@map("subjects")
 }
 
-model Enrollment {
-  id           Int              @id @default(autoincrement())
-  studentId    Int
+// Teacher-Subject assignment with capacity (for student teacher selection)
+model TeacherSubject {
+  id           Int          @id @default(autoincrement())
+  teacherId    Int
   subjectId    Int
+  capacity     Int          @default(50)
+  isActive     Boolean      @default(true)
   semester     String?
   academicYear String?
-  status       EnrollmentStatus @default(ACTIVE)
-  createdAt    DateTime         @default(now())
-  updatedAt    DateTime         @updatedAt
-  student      Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  subject      Subject          @relation(fields: [subjectId], references: [id], onDelete: Cascade)
-  grade        Grade?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  teacher     Staff        @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  subject     Subject      @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  enrollments Enrollment[]
+
+  @@unique([teacherId, subjectId, semester, academicYear])
+  @@map("teacher_subjects")
+}
+
+model Enrollment {
+  id               Int              @id @default(autoincrement())
+  studentId        Int
+  subjectId        Int
+  teacherId        Int?
+  teacherSubjectId Int?
+  semester         String?
+  academicYear     String?
+  status           EnrollmentStatus @default(ACTIVE)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  student        Student         @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  subject        Subject         @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  teacher        Staff?          @relation(fields: [teacherId], references: [id])
+  teacherSubject TeacherSubject? @relation(fields: [teacherSubjectId], references: [id])
+  grade          Grade?
 
   @@unique([studentId, subjectId, semester, academicYear])
   @@map("enrollments")

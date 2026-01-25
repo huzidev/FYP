@@ -3,13 +3,28 @@
 import AddStudentForm from "@/Component/Admin/Common/addUserForm";
 import StudentsTable from "@/Component/Admin/Student/StudentsTable";
 import Modal from "@/Component/Common/Modal";
-import { useState } from "react";
+import { getCurrentUser } from "@/lib/auth";
+import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 
 export default function StaffStudentsPage() {
+  const router = useRouter();
   const [isAddUploadOpen, setIsAddUploadOpen] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [formKey, setFormKey] = useState(0);
+  const [authorized, setAuthorized] = useState(false);
+
+  useEffect(() => {
+    // Check if user is ADMISSION staff - teachers should not access this page
+    const user = getCurrentUser();
+    if (user?.user?.role === "TEACHER") {
+      // Redirect teachers to their courses page
+      router.push("/staff/dashboard/my-courses");
+    } else {
+      setAuthorized(true);
+    }
+  }, [router]);
 
   const handleClose = () => {
     setIsAddUploadOpen(false);
@@ -27,6 +42,15 @@ export default function StaffStudentsPage() {
     // Reset form by incrementing key
     setFormKey(prev => prev + 1);
   };
+
+  // Don't render until authorization check is complete
+  if (!authorized) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-white text-xl">Checking access...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full space-y-6">
@@ -47,9 +71,9 @@ export default function StaffStudentsPage() {
       </div>
 
       {/* Modal */}
-      <Modal 
-        isOpen={isAddUploadOpen} 
-        onClose={handleClose} 
+      <Modal
+        isOpen={isAddUploadOpen}
+        onClose={handleClose}
         title={showSuccess ? "Student Created Successfully" : "Create Student"}
         size="xl"
       >
@@ -74,9 +98,9 @@ export default function StaffStudentsPage() {
             </div>
           </div>
         ) : (
-          <AddStudentForm 
+          <AddStudentForm
             key={formKey}
-            userType="student" 
+            userType="student"
             onSuccess={handleSuccess}
             onCancel={handleClose}
           />

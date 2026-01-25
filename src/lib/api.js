@@ -371,6 +371,16 @@ export class StaffService {
   static async getByRole(role) {
     return api.get(`/staff?role=${role}`);
   }
+
+  static async getCourses(teacherId, params = {}) {
+    const queryParams = new URLSearchParams();
+    if (params.semester) queryParams.append('semester', params.semester);
+    if (params.academicYear) queryParams.append('academicYear', params.academicYear);
+    if (params.includeStudents) queryParams.append('includeStudents', 'true');
+
+    const queryString = queryParams.toString();
+    return api.get(`/staff/${teacherId}/courses${queryString ? `?${queryString}` : ''}`);
+  }
 }
 
 export class StudentService {
@@ -473,11 +483,79 @@ export class SubjectService {
   static async getByDepartment(departmentId) {
     return api.get(`/subjects?departmentId=${departmentId}`);
   }
+
+  static async getAvailableTeachers(subjectId, params = {}) {
+    const queryParams = new URLSearchParams();
+    if (params.semester) queryParams.append('semester', params.semester);
+    if (params.academicYear) queryParams.append('academicYear', params.academicYear);
+
+    const queryString = queryParams.toString();
+    return api.get(`/subjects/${subjectId}/available-teachers${queryString ? `?${queryString}` : ''}`);
+  }
+
+  static async getStudents(subjectId, params = {}) {
+    const queryParams = new URLSearchParams();
+    if (params.teacherId) queryParams.append('teacherId', params.teacherId);
+    if (params.teacherSubjectId) queryParams.append('teacherSubjectId', params.teacherSubjectId);
+    if (params.semester) queryParams.append('semester', params.semester);
+    if (params.academicYear) queryParams.append('academicYear', params.academicYear);
+    if (params.status) queryParams.append('status', params.status);
+
+    const queryString = queryParams.toString();
+    return api.get(`/subjects/${subjectId}/students${queryString ? `?${queryString}` : ''}`);
+  }
+}
+
+export class TeacherSubjectService {
+  static async getAll(params = {}) {
+    const queryParams = new URLSearchParams();
+    if (params.teacherId) queryParams.append('teacherId', params.teacherId);
+    if (params.subjectId) queryParams.append('subjectId', params.subjectId);
+    if (params.semester) queryParams.append('semester', params.semester);
+    if (params.academicYear) queryParams.append('academicYear', params.academicYear);
+    if (typeof params.isActive === 'boolean') queryParams.append('isActive', params.isActive);
+
+    const queryString = queryParams.toString();
+    return api.get(`/teacher-subjects${queryString ? `?${queryString}` : ''}`);
+  }
+
+  static async getById(id) {
+    return api.get(`/teacher-subjects/${id}`);
+  }
+
+  static async create(data) {
+    return api.post('/teacher-subjects', data);
+  }
+
+  static async update(id, data) {
+    return api.put(`/teacher-subjects/${id}`, data);
+  }
+
+  static async delete(id) {
+    return api.delete(`/teacher-subjects/${id}`);
+  }
+
+  static async getByTeacher(teacherId) {
+    return api.get(`/teacher-subjects?teacherId=${teacherId}`);
+  }
+
+  static async getBySubject(subjectId) {
+    return api.get(`/teacher-subjects?subjectId=${subjectId}`);
+  }
 }
 
 export class EnrollmentService {
-  static async getAll() {
-    return api.get('/enrollments');
+  static async getAll(params = {}) {
+    const queryParams = new URLSearchParams();
+    if (params.studentId) queryParams.append('studentId', params.studentId);
+    if (params.subjectId) queryParams.append('subjectId', params.subjectId);
+    if (params.teacherId) queryParams.append('teacherId', params.teacherId);
+    if (params.status) queryParams.append('status', params.status);
+    if (params.semester) queryParams.append('semester', params.semester);
+    if (params.academicYear) queryParams.append('academicYear', params.academicYear);
+
+    const queryString = queryParams.toString();
+    return api.get(`/enrollments${queryString ? `?${queryString}` : ''}`);
   }
 
   static async getById(id) {
@@ -502,6 +580,10 @@ export class EnrollmentService {
 
   static async getBySubject(subjectId) {
     return api.get(`/enrollments?subjectId=${subjectId}`);
+  }
+
+  static async getByTeacher(teacherId) {
+    return api.get(`/enrollments?teacherId=${teacherId}`);
   }
 }
 
@@ -536,8 +618,18 @@ export class FeeService {
 }
 
 export class GradeService {
-  static async getAll() {
-    return api.get('/grades');
+  static async getAll(params = {}) {
+    const queryParams = new URLSearchParams();
+    if (params.studentId) queryParams.append('studentId', params.studentId);
+    if (params.subjectId) queryParams.append('subjectId', params.subjectId);
+    if (params.teacherId) queryParams.append('teacherId', params.teacherId);
+    if (params.semester) queryParams.append('semester', params.semester);
+    if (params.academicYear) queryParams.append('academicYear', params.academicYear);
+    if (params.page) queryParams.append('page', params.page);
+    if (params.limit) queryParams.append('limit', params.limit);
+
+    const queryString = queryParams.toString();
+    return api.get(`/grades${queryString ? `?${queryString}` : ''}`);
   }
 
   static async getById(id) {
@@ -557,7 +649,23 @@ export class GradeService {
   }
 
   static async getByEnrollment(enrollmentId) {
-    return api.get(`/grades?enrollmentId=${enrollmentId}`);
+    return api.get(`/enrollments/${enrollmentId}/grade`);
+  }
+
+  static async updateEnrollmentGrade(enrollmentId, gradeData) {
+    return api.put(`/enrollments/${enrollmentId}/grade`, gradeData);
+  }
+
+  static async deleteEnrollmentGrade(enrollmentId) {
+    return api.delete(`/enrollments/${enrollmentId}/grade`);
+  }
+
+  static async bulkUpdate(grades, examType = 'FINAL') {
+    return api.post('/grades/bulk', { grades, examType });
+  }
+
+  static async getStudentTranscript(studentId) {
+    return api.get(`/students/${studentId}/transcript`);
   }
 }
 

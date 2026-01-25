@@ -9,11 +9,15 @@ export async function GET(request, { params }) {
     const staff = await prisma.staff.findUnique({
       where: { id: parseInt(id) },
       include: {
-        subjects: {
-          select: {
-            id: true,
-            name: true,
-            code: true,
+        teacherSubjects: {
+          include: {
+            subject: {
+              select: {
+                id: true,
+                name: true,
+                code: true,
+              },
+            },
           },
         },
       },
@@ -26,10 +30,15 @@ export async function GET(request, { params }) {
       );
     }
 
-    // Remove password from response
-    const { password: _, ...staffData } = staff;
+    // Remove password and transform response
+    const { password: _, teacherSubjects, ...staffData } = staff;
 
-    return NextResponse.json({ data: staffData });
+    return NextResponse.json({
+      data: {
+        ...staffData,
+        subjects: teacherSubjects.map(ts => ts.subject),
+      }
+    });
   } catch (error) {
     console.error('Error fetching staff:', error);
     return NextResponse.json(
@@ -44,18 +53,18 @@ export async function PUT(request, { params }) {
   try {
     const { id } = await params;
     const body = await request.json();
-    const { 
-      fullName, 
-      email, 
-      password, 
-      role, 
-      staffId, 
-      phone, 
-      address, 
-      salary, 
-      hireDate, 
+    const {
+      fullName,
+      email,
+      password,
+      role,
+      staffId,
+      phone,
+      address,
+      salary,
+      hireDate,
       isActive,
-      subjectIds 
+      subjectIds
     } = body;
 
     // Check if staff exists
@@ -88,47 +97,60 @@ export async function PUT(request, { params }) {
       updateData.password = await bcrypt.hash(password, 10);
     }
 
-    // Handle subject connections
-    if (subjectIds !== undefined) {
-      // First disconnect all existing subjects
-      await prisma.staff.update({
-        where: { id: parseInt(id) },
-        data: {
-          subjects: {
-            set: [],
-          },
-        },
-      });
-
-      // Then connect new subjects if any
-      if (subjectIds && subjectIds.length > 0) {
-        updateData.subjects = {
-          connect: subjectIds.map(subjectId => ({ id: parseInt(subjectId) })),
-        };
-      }
-    }
-
-    // Update staff
+    // Update staff basic info
     const staff = await prisma.staff.update({
       where: { id: parseInt(id) },
       data: updateData,
+    });
+
+    // Handle subject assignments if provided
+    if (subjectIds !== undefined && role === 'TEACHER') {
+      // Delete existing teacher-subject assignments
+      await prisma.teacherSubject.deleteMany({
+        where: { teacherId: parseInt(id) },
+      });
+
+      // Create new assignments if any
+      if (subjectIds && subjectIds.length > 0) {
+        for (const subjectId of subjectIds) {
+          await prisma.teacherSubject.create({
+            data: {
+              teacherId: parseInt(id),
+              subjectId: parseInt(subjectId),
+              capacity: 50,
+            },
+          });
+        }
+      }
+    }
+
+    // Fetch updated staff with subjects
+    const updatedStaff = await prisma.staff.findUnique({
+      where: { id: parseInt(id) },
       include: {
-        subjects: {
-          select: {
-            id: true,
-            name: true,
-            code: true,
+        teacherSubjects: {
+          include: {
+            subject: {
+              select: {
+                id: true,
+                name: true,
+                code: true,
+              },
+            },
           },
         },
       },
     });
 
-    // Remove password from response
-    const { password: _, ...staffData } = staff;
+    // Remove password and transform response
+    const { password: _, teacherSubjects, ...staffData } = updatedStaff;
 
     return NextResponse.json({
       message: 'Staff updated successfully',
-      data: staffData,
+      data: {
+        ...staffData,
+        subjects: teacherSubjects.map(ts => ts.subject),
+      },
     });
   } catch (error) {
     console.error('Error updating staff:', error);
@@ -156,7 +178,7 @@ export async function DELETE(request, { params }) {
       );
     }
 
-    // Delete staff
+    // Delete staff (teacherSubjects will cascade delete)
     await prisma.staff.delete({
       where: { id: parseInt(id) },
     });

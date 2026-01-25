@@ -19,11 +19,15 @@ export async function POST(request) {
     const staff = await prisma.staff.findUnique({
       where: { email },
       include: {
-        subjects: {
-          select: {
-            id: true,
-            name: true,
-            code: true,
+        teacherSubjects: {
+          include: {
+            subject: {
+              select: {
+                id: true,
+                name: true,
+                code: true,
+              },
+            },
           },
         },
       },
@@ -60,8 +64,8 @@ export async function POST(request) {
       data: { lastLoginAt: new Date() },
     });
 
-    // Return staff data (without password)
-    const { password: _, ...staffData } = staff;
+    // Transform and return staff data (without password)
+    const { password: _, teacherSubjects, ...staffData } = staff;
 
     // Generate token (simple token generation - in production use JWT)
     const token = `staff_${staff.id}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -70,6 +74,7 @@ export async function POST(request) {
       message: 'Login successful',
       data: {
         ...staffData,
+        subjects: teacherSubjects.map(ts => ts.subject),
         userType: 'staff',
       },
       token,

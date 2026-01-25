@@ -30,11 +30,16 @@ export async function GET(request) {
             code: true,
           },
         },
-        teachers: {
-          select: {
-            id: true,
-            fullName: true,
-            staffId: true,
+        teacherSubjects: {
+          where: { isActive: true },
+          include: {
+            teacher: {
+              select: {
+                id: true,
+                fullName: true,
+                staffId: true,
+              },
+            },
           },
         },
         _count: {
@@ -46,13 +51,24 @@ export async function GET(request) {
       orderBy: { name: 'asc' },
     });
 
+    // Transform to include teachers array for backward compatibility
+    const transformedSubjects = subjects.map(subject => ({
+      ...subject,
+      teachers: subject.teacherSubjects.map(ts => ({
+        ...ts.teacher,
+        capacity: ts.capacity,
+        teacherSubjectId: ts.id,
+      })),
+    }));
+
     return NextResponse.json({
-      data: subjects,
+      success: true,
+      data: transformedSubjects,
     });
   } catch (error) {
     console.error('Error fetching subjects:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch subjects' },
+      { success: false, error: 'Failed to fetch subjects' },
       { status: 500 }
     );
   }
@@ -62,21 +78,21 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { 
-      name, 
-      code, 
-      description, 
-      creditHours, 
-      semester, 
-      level, 
+    const {
+      name,
+      code,
+      description,
+      creditHours,
+      semester,
+      level,
       departmentId,
-      teacherIds 
+      teacherAssignments // Array of { teacherId, capacity } objects
     } = body;
 
     // Validation
     if (!name || !code || !departmentId) {
       return NextResponse.json(
-        { error: 'Name, code, and department are required' },
+        { success: false, error: 'Name, code, and department are required' },
         { status: 400 }
       );
     }
@@ -88,53 +104,96 @@ export async function POST(request) {
 
     if (existingSubject) {
       return NextResponse.json(
-        { error: 'Subject with this code already exists' },
+        { success: false, error: 'Subject with this code already exists' },
         { status: 400 }
       );
     }
 
-    // Create subject
-    const subject = await prisma.subject.create({
-      data: {
-        name,
-        code,
-        description,
-        creditHours: creditHours ? parseInt(creditHours) : 3,
-        semester: semester ? parseInt(semester) : null,
-        level,
-        departmentId: parseInt(departmentId),
-        ...(teacherIds && teacherIds.length > 0 && {
-          teachers: {
-            connect: teacherIds.map(id => ({ id: parseInt(id) })),
+    // Create subject with teacher assignments in a transaction
+    const result = await prisma.$transaction(async (tx) => {
+      // Create subject
+      const subject = await tx.subject.create({
+        data: {
+          name,
+          code,
+          description,
+          creditHours: creditHours ? parseInt(creditHours) : 3,
+          semester: semester ? parseInt(semester) : null,
+          level,
+          departmentId: parseInt(departmentId),
+        },
+      });
+
+      // Create teacher assignments if provided
+      if (teacherAssignments && teacherAssignments.length > 0) {
+        for (const assignment of teacherAssignments) {
+          // Validate teacher exists and is a TEACHER
+          const teacher = await tx.staff.findUnique({
+            where: { id: parseInt(assignment.teacherId) },
+          });
+
+          if (!teacher || teacher.role !== 'TEACHER') {
+            throw new Error(`Invalid teacher ID: ${assignment.teacherId}`);
+          }
+
+          await tx.teacherSubject.create({
+            data: {
+              teacherId: parseInt(assignment.teacherId),
+              subjectId: subject.id,
+              capacity: assignment.capacity ? parseInt(assignment.capacity) : 50,
+            },
+          });
+        }
+      }
+
+      // Fetch complete subject with relations
+      return tx.subject.findUnique({
+        where: { id: subject.id },
+        include: {
+          department: {
+            select: {
+              id: true,
+              name: true,
+              code: true,
+            },
           },
-        }),
-      },
-      include: {
-        department: {
-          select: {
-            id: true,
-            name: true,
-            code: true,
+          teacherSubjects: {
+            include: {
+              teacher: {
+                select: {
+                  id: true,
+                  fullName: true,
+                  staffId: true,
+                },
+              },
+            },
           },
         },
-        teachers: {
-          select: {
-            id: true,
-            fullName: true,
-            staffId: true,
-          },
-        },
-      },
+      });
     });
 
+    // Transform response
+    const transformedSubject = {
+      ...result,
+      teachers: result.teacherSubjects.map(ts => ({
+        ...ts.teacher,
+        capacity: ts.capacity,
+        teacherSubjectId: ts.id,
+      })),
+    };
+
     return NextResponse.json(
-      { message: 'Subject created successfully', data: subject },
+      {
+        success: true,
+        message: 'Subject created successfully',
+        data: transformedSubject
+      },
       { status: 201 }
     );
   } catch (error) {
     console.error('Error creating subject:', error);
     return NextResponse.json(
-      { error: 'Failed to create subject' },
+      { success: false, error: error.message || 'Failed to create subject' },
       { status: 500 }
     );
   }
