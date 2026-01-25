@@ -15,6 +15,7 @@ const AdminSidebar = () => {
     { name: "Admins", path: "/admin/dashboard/admins" },
     { name: "Departments", path: "/admin/dashboard/departments" },
     { name: "Courses", path: "/admin/dashboard/courses" },
+    { name: "Teacher Assignments", path: "/admin/dashboard/teacher-assignments" },
     { name: "Announcements", path: "/admin/dashboard/announcements" },
   ];
 

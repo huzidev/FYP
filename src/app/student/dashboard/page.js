@@ -71,44 +71,52 @@ const StudentDashboard = () => {
     {
       title: "Academic",
       items: [
-        "Current Courses",
-        "Program Syllabus",
-        "Attendance Report",
-        "Grade History",
-        "PLO/CLO Attainment",
-        "Program Sheet",
+        { name: "Current Courses", link: "#" },
+        { name: "Program Syllabus", link: "#" },
+        { name: "Attendance Report", link: "#" },
+        { name: "Grade History / Transcript", link: "/student/dashboard/transcript" },
+        { name: "PLO/CLO Attainment", link: "#" },
+        { name: "Program Sheet", link: "#" },
       ],
       icon: <BookOpen size={18} />,
     },
     {
       title: "Finance",
-      items: ["Student Fee Bill", "Online Fee Payment", "Fee Statement"],
+      items: [
+        { name: "Student Fee Bill", link: "#" },
+        { name: "Online Fee Payment", link: "#" },
+        { name: "Fee Statement", link: "#" },
+      ],
       icon: <CreditCard size={18} />,
     },
     {
       title: "Resources",
-      items: ["Search KIET Library", "Digital Library", "Book Issued"],
+      items: [
+        { name: "Search KIET Library", link: "#" },
+        { name: "Digital Library", link: "#" },
+        { name: "Book Issued", link: "#" },
+      ],
       icon: <Info size={18} />,
     },
     {
       title: "Admin/Schedule",
       items: [
-        "Self Registration",
-        "Class Schedule",
-        "Exam Schedule",
-        "Academic Calendar",
-        "Online Clearance",
+        { name: "Self Registration", link: "#" },
+        { name: "Class Schedule", link: "#" },
+        { name: "Exam Schedule", link: "#" },
+        { name: "Academic Calendar", link: "#" },
+        { name: "Online Clearance", link: "#" },
       ],
       icon: <Calendar size={18} />,
     },
     {
       title: "Support & Info",
       items: [
-        "Alumni Info",
-        "Test Results (Standard & OBE)",
-        "Student Support",
-        "Notifications",
-        "Last 30 Days Emails",
+        { name: "Alumni Info", link: "#" },
+        { name: "Test Results (Standard & OBE)", link: "#" },
+        { name: "Student Support", link: "#" },
+        { name: "Notifications", link: "#" },
+        { name: "Last 30 Days Emails", link: "#" },
       ],
       icon: <FileText size={18} />,
     },
@@ -229,8 +237,19 @@ const StudentDashboard = () => {
 
               <ul className="text-gray-400 text-sm mt-2 space-y-1">
                 {section.items.map((item, i) => (
-                  <li key={i} className="hover:text-white cursor-pointer py-1">
-                    • {item}
+                  <li key={i}>
+                    {item.link && item.link !== "#" ? (
+                      <a
+                        href={item.link}
+                        className="block hover:text-white hover:bg-[#1e1e26] px-2 py-1 rounded transition"
+                      >
+                        • {item.name}
+                      </a>
+                    ) : (
+                      <span className="block hover:text-white cursor-pointer px-2 py-1">
+                        • {item.name}
+                      </span>
+                    )}
                   </li>
                 ))}
               </ul>

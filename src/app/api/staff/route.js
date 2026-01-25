@@ -30,11 +30,15 @@ export async function GET(request) {
         skip,
         take: limit,
         include: {
-          subjects: {
-            select: {
-              id: true,
-              name: true,
-              code: true,
+          teacherSubjects: {
+            include: {
+              subject: {
+                select: {
+                  id: true,
+                  name: true,
+                  code: true,
+                },
+              },
             },
           },
         },
@@ -43,8 +47,12 @@ export async function GET(request) {
       prisma.staff.count({ where }),
     ]);
 
-    // Remove password from response
-    const staffWithoutPassword = staff.map(({ password, ...staffData }) => staffData);
+    // Transform and remove password from response
+    const staffWithoutPassword = staff.map(({ password, teacherSubjects, ...staffData }) => ({
+      ...staffData,
+      // Transform teacherSubjects to subjects for backward compatibility
+      subjects: teacherSubjects.map(ts => ts.subject),
+    }));
 
     return NextResponse.json({
       data: staffWithoutPassword,
@@ -68,17 +76,17 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { 
-      fullName, 
-      email, 
-      password, 
-      role, 
-      staffId, 
-      phone, 
-      address, 
-      salary, 
+    const {
+      fullName,
+      email,
+      password,
+      role,
+      staffId,
+      phone,
+      address,
+      salary,
       hireDate,
-      subjectIds 
+      subjectIds
     } = body;
 
     // Validation
@@ -109,7 +117,7 @@ export async function POST(request) {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create staff with subjects if provided
+    // Create staff (without subject assignment - use TeacherSubject API for that)
     const staff = await prisma.staff.create({
       data: {
         fullName,
@@ -121,28 +129,51 @@ export async function POST(request) {
         address,
         salary: salary ? parseFloat(salary) : null,
         hireDate: hireDate ? new Date(hireDate) : null,
-        ...(subjectIds && subjectIds.length > 0 && {
-          subjects: {
-            connect: subjectIds.map(id => ({ id: parseInt(id) })),
-          },
-        }),
       },
+    });
+
+    // If subjectIds provided and staff is a teacher, create TeacherSubject assignments
+    if (subjectIds && subjectIds.length > 0 && role === 'TEACHER') {
+      for (const subjectId of subjectIds) {
+        await prisma.teacherSubject.create({
+          data: {
+            teacherId: staff.id,
+            subjectId: parseInt(subjectId),
+            capacity: 50, // Default capacity
+          },
+        });
+      }
+    }
+
+    // Fetch staff with subjects
+    const staffWithSubjects = await prisma.staff.findUnique({
+      where: { id: staff.id },
       include: {
-        subjects: {
-          select: {
-            id: true,
-            name: true,
-            code: true,
+        teacherSubjects: {
+          include: {
+            subject: {
+              select: {
+                id: true,
+                name: true,
+                code: true,
+              },
+            },
           },
         },
       },
     });
 
-    // Remove password from response
-    const { password: _, ...staffData } = staff;
+    // Remove password and transform response
+    const { password: _, teacherSubjects, ...staffData } = staffWithSubjects;
 
     return NextResponse.json(
-      { message: 'Staff created successfully', data: staffData },
+      {
+        message: 'Staff created successfully',
+        data: {
+          ...staffData,
+          subjects: teacherSubjects.map(ts => ts.subject),
+        }
+      },
       { status: 201 }
     );
   } catch (error) {
