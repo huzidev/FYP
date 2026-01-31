@@ -16,6 +16,7 @@ export async function GET(request) {
       ...(studentId && { studentId: parseInt(studentId) }),
       ...(subjectId && { subjectId: parseInt(subjectId) }),
       ...(teacherId && { teacherId: parseInt(teacherId) }),
+      ...(teacherSubjectId && { teacherSubjectId: parseInt(teacherSubjectId) }),
       ...(status && { status }),
       ...(semester && { semester }),
       ...(academicYear && { academicYear }),

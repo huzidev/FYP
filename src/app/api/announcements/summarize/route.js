@@ -1,4 +1,46 @@
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { NextResponse } from 'next/server';
+
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
+async function summarizePost(postText) {
+  const model = genAI.getGenerativeModel({
+    model: 'gemini-2.5-flash',
+  });
+
+  const prompt = `You are an expert educational content analyzer specializing in academic announcements and institutional communications.
+
+Your task is to provide a comprehensive yet concise summary of the following announcement. Structure your summary as follows:
+
+**Main Purpose**: Start with one clear sentence stating the primary objective or topic of the announcement.
+
+**Key Points**: Present the most important information in 3-5 well-structured bullet points, focusing on:
+- Critical details (dates, deadlines, requirements)
+- Action items or what students/staff need to do
+- Important conditions, eligibility, or restrictions
+- Benefits or consequences
+
+**Target Audience**: If mentioned or implied, note who this announcement is relevant to.
+
+**Urgency**: If there are time-sensitive elements, highlight them clearly.
+
+Guidelines:
+- Be clear, accurate, and objective
+- Preserve all important dates, numbers, and specific requirements
+- Use professional academic tone
+- Avoid unnecessary elaboration
+- Ensure the summary is actionable and informative
+
+Announcement Content:
+${postText}
+
+Provide the summary in a clean, well-formatted manner without using markdown headers (avoid using # or **).`;
+
+  const result = await model.generateContent(prompt);
+  const response = result.response.text();
+
+  return response;
+}
 
 export async function POST(request) {
   try {
@@ -12,80 +54,11 @@ export async function POST(request) {
       );
     }
 
-    // Get Gemini API key from environment variables
-    const apiKey = process.env.GEMINI_API_KEY;
-    
-    if (!apiKey) {
-      return NextResponse.json(
-        { error: 'Gemini API key not configured' },
-        { status: 500 }
-      );
-    }
-
     // Strip HTML tags from content for better summarization
     const plainText = content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
 
-    // Call Google Gemini API
-    const geminiResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                {
-                  text: `You are an expert at summarizing educational announcements and academic content. Your task is to create a clear, concise, and informative summary that captures the key points and essential information.
-
-Please summarize the following announcement content in 2-3 sentences. Focus on:
-- Main topic or purpose
-- Key information or action items
-- Important dates, deadlines, or requirements (if mentioned)
-- Target audience relevance
-
-Keep the summary professional, clear, and easy to understand for students and staff.
-
-Content to summarize:
-${plainText}
-
-Provide only the summary without any preamble or additional commentary.`
-                }
-              ]
-            }
-          ],
-          generationConfig: {
-            temperature: 0.7,
-            topK: 40,
-            topP: 0.95,
-            maxOutputTokens: 200,
-          },
-        }),
-      }
-    );
-
-    if (!geminiResponse.ok) {
-      const errorData = await geminiResponse.json();
-      console.error('Gemini API error:', errorData);
-      return NextResponse.json(
-        { error: 'Failed to generate summary' },
-        { status: 500 }
-      );
-    }
-
-    const data = await geminiResponse.json();
-    
-    // Extract the summary from Gemini's response
-    const summary = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-
-    if (!summary) {
-      return NextResponse.json(
-        { error: 'No summary generated' },
-        { status: 500 }
-      );
-    }
+    // Generate summary using Google Generative AI
+    const summary = await summarizePost(plainText);
 
     return NextResponse.json({ summary });
   } catch (error) {

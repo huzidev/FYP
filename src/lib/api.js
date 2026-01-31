@@ -550,6 +550,7 @@ export class EnrollmentService {
     if (params.studentId) queryParams.append('studentId', params.studentId);
     if (params.subjectId) queryParams.append('subjectId', params.subjectId);
     if (params.teacherId) queryParams.append('teacherId', params.teacherId);
+    if (params.teacherSubjectId) queryParams.append('teacherSubjectId', params.teacherSubjectId);
     if (params.status) queryParams.append('status', params.status);
     if (params.semester) queryParams.append('semester', params.semester);
     if (params.academicYear) queryParams.append('academicYear', params.academicYear);

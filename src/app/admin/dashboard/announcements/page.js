@@ -16,7 +16,7 @@ export default function AnnouncementsPage() {
   const [stats, setStats] = useState({
     total: 0,
     questions: 0,
-    announcements: 0,
+    totalQueries: 0,
     active: 0
   });
   
@@ -40,7 +40,7 @@ export default function AnnouncementsPage() {
         setStats({
           total: data.total || 0,
           questions: data.questions || 0,
-          announcements: data.announcements || 0,
+          totalQueries: data.totalQueries || 0,
           active: data.active || 0
         });
       }
@@ -129,7 +129,7 @@ export default function AnnouncementsPage() {
         <div>
           <h1 className="text-3xl font-bold text-white mb-2">Announcements</h1>
           <p className="text-gray-400">
-            Manage announcements and questions for staff and students
+            Manage announcements and questions for students
           </p>
         </div>
         <button
@@ -146,7 +146,7 @@ export default function AnnouncementsPage() {
         <div className="bg-[#2d2d39] p-6 rounded-xl border border-[#25252b]">
           <div className="flex items-center">
             <div className="flex-1">
-              <p className="text-sm font-medium text-gray-400">Total</p>
+              <p className="text-sm font-medium text-gray-400">My Announcements</p>
               <p className="text-2xl font-bold text-white">{stats.total}</p>
             </div>
             <div className="bg-indigo-600/20 p-3 rounded-full">
@@ -170,8 +170,8 @@ export default function AnnouncementsPage() {
         <div className="bg-[#2d2d39] p-6 rounded-xl border border-[#25252b]">
           <div className="flex items-center">
             <div className="flex-1">
-              <p className="text-sm font-medium text-gray-400">Announcements</p>
-              <p className="text-2xl font-bold text-green-400">{stats.announcements}</p>
+              <p className="text-sm font-medium text-gray-400">Total Queries</p>
+              <p className="text-2xl font-bold text-green-400">{stats.totalQueries}</p>
             </div>
             <div className="bg-green-600/20 p-3 rounded-full">
               <div className="w-6 h-6 bg-green-600 rounded"></div>

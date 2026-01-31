@@ -73,31 +73,31 @@ async function main() {
 
   // Create Staff Members
   console.log('👨‍🏫 Creating staff members...');
-  const hashedStaffPassword = await bcrypt.hash('staff@smi.com', 10);
+  const hashedStaffPassword = await bcrypt.hash('rafay16031@gmail.com', 10);
   const staffMembers = await Promise.all([
     prisma.staff.upsert({
-      where: { email: 'staff@smi.com' },
+      where: { email: 'rafay16031@gmail.com' },
       update: {},
       create: {
-        fullName: 'Dr. John Smith',
-        email: 'staff@smi.com',
+        fullName: 'Dr. Rafay',
+        email: 'rafay16031@gmail.com',
         password: hashedStaffPassword,
         role: 'TEACHER',
-        staffId: 'T001',
+        staffId: 'T002',
         phone: '+1234567891',
         salary: 75000,
         hireDate: new Date('2020-01-15'),
       },
     }),
     prisma.staff.upsert({
-      where: { email: 'admission@smi.com' },
+      where: { email: 'huzaifaiqbal.2015@gmail.com' },
       update: {},
       create: {
-        fullName: 'Sarah Johnson',
-        email: 'admission@smi.com',
+        fullName: 'Huzaifa Iqbal',
+        email: 'huzaifaiqbal.2015@gmail.com',
         password: hashedStaffPassword,
         role: 'ADMISSION',
-        staffId: 'A001',
+        staffId: 'A002',
         phone: '+1234567892',
         salary: 45000,
         hireDate: new Date('2019-08-20'),
