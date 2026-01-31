@@ -1,22 +1,23 @@
-import { prisma } from '@/lib/prisma';
-import { NextResponse } from 'next/server';
+import { prisma } from "@/lib/prisma";
+import { NextResponse } from "next/server";
 
 // GET /api/teacher-subjects - Get all teacher-subject assignments
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
-    const teacherId = searchParams.get('teacherId');
-    const subjectId = searchParams.get('subjectId');
-    const semester = searchParams.get('semester');
-    const academicYear = searchParams.get('academicYear');
-    const isActive = searchParams.get('isActive');
+    const teacherId = searchParams.get("teacherId");
+    const subjectId = searchParams.get("subjectId");
+    const semester = searchParams.get("semester");
+    const academicYear = searchParams.get("academicYear");
+    const isActive = searchParams.get("isActive");
 
     const where = {
       ...(teacherId && { teacherId: parseInt(teacherId) }),
       ...(subjectId && { subjectId: parseInt(subjectId) }),
       ...(semester && { semester }),
       ...(academicYear && { academicYear }),
-      ...(isActive !== null && isActive !== undefined && { isActive: isActive === 'true' }),
+      ...(isActive !== null &&
+        isActive !== undefined && { isActive: isActive === "true" }),
     };
 
     const teacherSubjects = await prisma.teacherSubject.findMany({
@@ -26,8 +27,6 @@ export async function GET(request) {
           select: {
             id: true,
             fullName: true,
-            staffId: true,
-            email: true,
           },
         },
         subject: {
@@ -50,11 +49,11 @@ export async function GET(request) {
           },
         },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
 
     // Add enrollment count and available spots
-    const result = teacherSubjects.map(ts => ({
+    const result = teacherSubjects.map((ts) => ({
       ...ts,
       enrolledCount: ts._count.enrollments,
       availableSpots: ts.capacity - ts._count.enrollments,
@@ -66,10 +65,10 @@ export async function GET(request) {
       data: result,
     });
   } catch (error) {
-    console.error('Error fetching teacher-subjects:', error);
+    console.error("Error fetching teacher-subjects:", error);
     return NextResponse.json(
-      { success: false, error: 'Failed to fetch teacher-subject assignments' },
-      { status: 500 }
+      { success: false, error: "Failed to fetch teacher-subject assignments" },
+      { status: 500 },
     );
   }
 }
@@ -83,8 +82,8 @@ export async function POST(request) {
     // Validation
     if (!teacherId || !subjectId) {
       return NextResponse.json(
-        { success: false, error: 'Teacher ID and Subject ID are required' },
-        { status: 400 }
+        { success: false, error: "Teacher ID and Subject ID are required" },
+        { status: 400 },
       );
     }
 
@@ -95,15 +94,15 @@ export async function POST(request) {
 
     if (!teacher) {
       return NextResponse.json(
-        { success: false, error: 'Teacher not found' },
-        { status: 404 }
+        { success: false, error: "Teacher not found" },
+        { status: 404 },
       );
     }
 
-    if (teacher.role !== 'TEACHER') {
+    if (teacher.role !== "TEACHER") {
       return NextResponse.json(
-        { success: false, error: 'Staff member is not a teacher' },
-        { status: 400 }
+        { success: false, error: "Staff member is not a teacher" },
+        { status: 400 },
       );
     }
 
@@ -114,8 +113,8 @@ export async function POST(request) {
 
     if (!subject) {
       return NextResponse.json(
-        { success: false, error: 'Subject not found' },
-        { status: 404 }
+        { success: false, error: "Subject not found" },
+        { status: 404 },
       );
     }
 
@@ -131,8 +130,12 @@ export async function POST(request) {
 
     if (existingAssignment) {
       return NextResponse.json(
-        { success: false, error: 'Teacher is already assigned to this subject for the specified period' },
-        { status: 400 }
+        {
+          success: false,
+          error:
+            "Teacher is already assigned to this subject for the specified period",
+        },
+        { status: 400 },
       );
     }
 
@@ -168,16 +171,16 @@ export async function POST(request) {
     return NextResponse.json(
       {
         success: true,
-        message: 'Teacher assigned to subject successfully',
-        data: teacherSubject
+        message: "Teacher assigned to subject successfully",
+        data: teacherSubject,
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
-    console.error('Error creating teacher-subject assignment:', error);
+    console.error("Error creating teacher-subject assignment:", error);
     return NextResponse.json(
-      { success: false, error: 'Failed to assign teacher to subject' },
-      { status: 500 }
+      { success: false, error: "Failed to assign teacher to subject" },
+      { status: 500 },
     );
   }
 }

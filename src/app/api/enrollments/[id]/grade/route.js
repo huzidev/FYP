@@ -2,7 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 import { calculateGradeDetails } from '@/lib/gradeUtils';
 
-// GET /api/enrollments/[id]/grade - Get grade for enrollment
+
 export async function GET(request, { params }) {
   try {
     const { id } = await params;

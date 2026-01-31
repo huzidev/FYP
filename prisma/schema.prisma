@@ -7,241 +7,182 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+//////////////////// USERS ////////////////////
+
 model Admin {
-  id             Int       @id @default(autoincrement())
-  fullName       String
-  email          String    @unique
-  password       String
-  role           AdminRole
-  phone          String?
-  address        String?
-  isActive       Boolean   @default(true)
-  lastLoginAt    DateTime?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-  resetOtp       String?
-  resetOtpExpiry DateTime?
+  id        Int       @id @default(autoincrement())
+  fullName  String
+  email     String    @unique
+  password  String
+  role      AdminRole
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   @@map("admins")
 }
 
 model Staff {
-  id              Int              @id @default(autoincrement())
-  fullName        String
-  email           String           @unique
-  password        String
-  role            StaffRole
-  staffId         String           @unique
-  phone           String?
-  address         String?
-  salary          Float?
-  hireDate        DateTime?
-  isActive        Boolean          @default(true)
-  lastLoginAt     DateTime?
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  resetOtp        String?
-  resetOtpExpiry  DateTime?
-  teacherSubjects TeacherSubject[]
-  enrollments     Enrollment[]
+  id        Int       @id @default(autoincrement())
+  fullName  String
+  email     String    @unique
+  password  String
+  role      StaffRole
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   @@map("staff")
 }
 
 model Student {
-  id             Int          @id @default(autoincrement())
-  fullName       String
-  email          String       @unique
-  password       String
-  studentId      String       @unique
-  level          StudentLevel
-  gender         Gender?
-  phone          String?
-  address        String?
-  dateOfBirth    DateTime?
-  fatherName     String?
-  cnic           String?      @unique
-  admissionDate  DateTime?
-  isActive       Boolean      @default(true)
-  lastLoginAt    DateTime?
-  departmentId   Int
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  resetOtp       String?
-  resetOtpExpiry DateTime?
-  enrollments    Enrollment[]
-  fees           Fee?
-  department     Department   @relation(fields: [departmentId], references: [id])
+  id           Int          @id @default(autoincrement())
+  fullName     String
+  email        String       @unique
+  password     String
+  studentId    String       @unique
+  level        StudentLevel
+  departmentId Int
+  isActive     Boolean      @default(true)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  department  Department   @relation(fields: [departmentId], references: [id])
+  enrollments Enrollment[]
+  vouchers    FeeVoucher[]
 
   @@map("students")
 }
 
+//////////////////// ACADEMICS ////////////////////
+
 model Department {
-  id          Int            @id @default(autoincrement())
-  name        String         @unique
-  code        String         @unique
-  description String?
-  level       StudentLevel   @default(BACHELOR)
-  isActive    Boolean        @default(true)
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-  students    Student[]
-  subjects    Subject[]
+  id       Int          @id @default(autoincrement())
+  name     String       @unique
+  code     String       @unique
+  level    StudentLevel
+  isActive Boolean      @default(true)
+
+  students       Student[]
+  subjects       Subject[]
+  departmentFees DepartmentFee[]
 
   @@map("departments")
 }
 
 model Subject {
-  id              Int              @id @default(autoincrement())
-  name            String
-  code            String           @unique
-  description     String?
-  creditHours     Int              @default(3)
-  semester        Int?
-  level           StudentLevel?
-  isActive        Boolean          @default(true)
-  departmentId    Int
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  enrollments     Enrollment[]
-  department      Department       @relation(fields: [departmentId], references: [id])
-  teacherSubjects TeacherSubject[]
+  id           Int    @id @default(autoincrement())
+  name         String
+  code         String @unique
+  creditHours  Int    @default(3)
+  departmentId Int
+
+  department  Department   @relation(fields: [departmentId], references: [id])
+  enrollments Enrollment[]
+  subjectFee  SubjectFee?
 
   @@map("subjects")
 }
 
-// Teacher-Subject assignment with capacity (for student teacher selection)
-model TeacherSubject {
-  id           Int          @id @default(autoincrement())
-  teacherId    Int
-  subjectId    Int
-  capacity     Int          @default(50)
-  isActive     Boolean      @default(true)
-  semester     String?
-  academicYear String?
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-
-  teacher     Staff        @relation(fields: [teacherId], references: [id], onDelete: Cascade)
-  subject     Subject      @relation(fields: [subjectId], references: [id], onDelete: Cascade)
-  enrollments Enrollment[]
-
-  @@unique([teacherId, subjectId, semester, academicYear])
-  @@map("teacher_subjects")
-}
-
 model Enrollment {
-  id               Int              @id @default(autoincrement())
-  studentId        Int
-  subjectId        Int
-  teacherId        Int?
-  teacherSubjectId Int?
-  semester         String?
-  academicYear     String?
-  status           EnrollmentStatus @default(ACTIVE)
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
+  id        Int    @id @default(autoincrement())
+  studentId Int
+  subjectId Int
+  semester  String
+  year      String
 
-  student        Student         @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  subject        Subject         @relation(fields: [subjectId], references: [id], onDelete: Cascade)
-  teacher        Staff?          @relation(fields: [teacherId], references: [id])
-  teacherSubject TeacherSubject? @relation(fields: [teacherSubjectId], references: [id])
-  grade          Grade?
+  student Student @relation(fields: [studentId], references: [id])
+  subject Subject @relation(fields: [subjectId], references: [id])
 
-  @@unique([studentId, subjectId, semester, academicYear])
+  @@unique([studentId, subjectId, semester, year])
   @@map("enrollments")
 }
 
-model Grade {
-  id           Int        @id @default(autoincrement())
-  enrollmentId Int        @unique
-  marks        Float?
-  totalMarks   Float      @default(100)
-  percentage   Float?
-  letterGrade  String?
-  gpa          Float?
-  semester     String?
-  examType     String?
-  remarks      String?
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-  enrollment   Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+//////////////////// FEES CORE ////////////////////
 
-  @@map("grades")
-}
+model FeeVoucher {
+  id           Int      @id @default(autoincrement())
+  challanNo    String   @unique
+  billId       String   @unique
+  semester     String
+  academicYear String
+  validTill    DateTime
 
-model Fee {
-  id            Int       @id @default(autoincrement())
-  amount        Float
-  paidAmount    Float     @default(0)
-  dueAmount     Float?
-  status        FeeStatus
-  semester      String?
-  academicYear  String?
-  dueDate       DateTime?
-  paidDate      DateTime?
-  description   String?
-  receiptNumber String?
-  studentId     Int       @unique
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  student       Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  totalAmount Float
+  status      FeeStatus @default(PENDING)
 
-  @@map("fees")
-}
+  studentId Int
+  student   Student @relation(fields: [studentId], references: [id])
 
-model AcademicYear {
-  id        Int      @id @default(autoincrement())
-  year      String   @unique
-  startDate DateTime
-  endDate   DateTime
-  isActive  Boolean  @default(false)
+  items    FeeVoucherItem[]
+  payments Payment[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@map("academic_years")
+  @@map("fee_vouchers")
 }
 
-model Semester {
+model FeeVoucherItem {
+  id           Int   @id @default(autoincrement())
+  voucherId    Int
+  particularId Int
+  amount       Float
+
+  voucher    FeeVoucher    @relation(fields: [voucherId], references: [id])
+  particular FeeParticular @relation(fields: [particularId], references: [id])
+
+  @@map("fee_voucher_items")
+}
+
+model Payment {
   id        Int      @id @default(autoincrement())
-  name      String   @unique
-  startDate DateTime
-  endDate   DateTime
-  isActive  Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  voucherId Int
+  amount    Float
+  method    String
+  paidAt    DateTime @default(now())
 
-  @@map("semesters")
+  voucher FeeVoucher @relation(fields: [voucherId], references: [id])
+
+  @@map("payments")
 }
 
-model Announcement {
-  id            Int                    @id @default(autoincrement())
-  title         String
-  content       String
-  imageUrl      String?
-  type          AnnouncementType
-  visibility    AnnouncementVisibility
-  isActive      Boolean                @default(true)
-  createdById   Int
-  createdByType UserType
-  createdAt     DateTime               @default(now())
-  updatedAt     DateTime               @updatedAt
-  queries       AnnouncementQuery[]
+//////////////////// FEE CONFIG ////////////////////
 
-  @@map("announcements")
+model FeeParticular {
+  id       Int     @id @default(autoincrement())
+  name     String  @unique
+  isActive Boolean @default(true)
+
+  voucherItems   FeeVoucherItem[]
+  departmentFees DepartmentFee[]
+
+  @@map("fee_particulars")
 }
 
-model AnnouncementQuery {
-  id             Int          @id @default(autoincrement())
-  content        String
-  announcementId Int
-  userId         Int
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+model DepartmentFee {
+  departmentId Int
+  particularId Int
+  amount       Float
 
-  @@map("announcement_queries")
+  department Department    @relation(fields: [departmentId], references: [id])
+  particular FeeParticular @relation(fields: [particularId], references: [id])
+
+  @@id([departmentId, particularId])
+  @@map("department_fees")
 }
+
+model SubjectFee {
+  id          Int   @id @default(autoincrement())
+  subjectId   Int   @unique
+  ratePerCrHr Float
+
+  subject Subject @relation(fields: [subjectId], references: [id])
+
+  @@map("subject_fees")
+}
+
+//////////////////// ENUMS ////////////////////
 
 enum AdminRole {
   ADMIN
@@ -258,38 +199,9 @@ enum StudentLevel {
   MASTER
 }
 
-enum Gender {
-  MALE
-  FEMALE
-  OTHER
-}
-
-enum EnrollmentStatus {
-  ACTIVE
-  DROPPED
-  COMPLETED
-}
-
 enum FeeStatus {
   PENDING
   PAID
   PARTIAL
   OVERDUE
-}
-
-enum AnnouncementType {
-  QUESTION
-  ANNOUNCEMENT
-}
-
-enum AnnouncementVisibility {
-  STAFF_ONLY
-  STUDENTS_ONLY
-  BOTH
-}
-
-enum UserType {
-  ADMIN
-  STAFF
-  STUDENT
 }

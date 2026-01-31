@@ -18,9 +18,8 @@ const StudentDashboard = () => {
 
   useEffect(() => {
     const load = async () => {
-      const { isAuthenticated, getCurrentUser, USER_TYPES } = await import(
-        "../../../lib/auth"
-      );
+      const { isAuthenticated, getCurrentUser, USER_TYPES } =
+        await import("../../../lib/auth");
 
       if (!isAuthenticated()) {
         router.replace("/student/signin");
@@ -71,10 +70,16 @@ const StudentDashboard = () => {
     {
       title: "Academic",
       items: [
-        { name: "Current Courses", link: "#" },
+        {
+          name: "Current Courses",
+          link: "/student/dashboard/academic/current-course",
+        },
         { name: "Program Syllabus", link: "#" },
         { name: "Attendance Report", link: "#" },
-        { name: "Grade History / Transcript", link: "/student/dashboard/transcript" },
+        {
+          name: "Grade History / Transcript",
+          link: "/student/dashboard/academic/transcript",
+        },
         { name: "PLO/CLO Attainment", link: "#" },
         { name: "Program Sheet", link: "#" },
       ],
@@ -83,9 +88,14 @@ const StudentDashboard = () => {
     {
       title: "Finance",
       items: [
-        { name: "Student Fee Bill", link: "#" },
+        {
+          name: "Student Fee Status",
+          link: "/student/dashboard/finance/student-fee",
+        },
         { name: "Online Fee Payment", link: "#" },
         { name: "Fee Statement", link: "#" },
+        { name: "Generate Fee Voucher", 
+          link: "/student/dashboard/finance/generate-fee" },
       ],
       icon: <CreditCard size={18} />,
     },
@@ -101,7 +111,10 @@ const StudentDashboard = () => {
     {
       title: "Admin/Schedule",
       items: [
-        { name: "Self Registration", link: "#" },
+        {
+          name: "Self Registration",
+          link: "/student/dashboard/Self-Registration",
+        },
         { name: "Class Schedule", link: "#" },
         { name: "Exam Schedule", link: "#" },
         { name: "Academic Calendar", link: "#" },

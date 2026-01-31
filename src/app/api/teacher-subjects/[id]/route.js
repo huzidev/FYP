@@ -1,5 +1,5 @@
-import { prisma } from '@/lib/prisma';
-import { NextResponse } from 'next/server';
+import { prisma } from "@/lib/prisma";
+import { NextResponse } from "next/server";
 
 // GET /api/teacher-subjects/[id] - Get single teacher-subject assignment
 export async function GET(request, { params }) {
@@ -57,15 +57,16 @@ export async function GET(request, { params }) {
 
     if (!teacherSubject) {
       return NextResponse.json(
-        { success: false, error: 'Teacher-subject assignment not found' },
-        { status: 404 }
+        { success: false, error: "Teacher-subject assignment not found" },
+        { status: 404 },
       );
     }
 
     const result = {
       ...teacherSubject,
       enrolledCount: teacherSubject._count.enrollments,
-      availableSpots: teacherSubject.capacity - teacherSubject._count.enrollments,
+      availableSpots:
+        teacherSubject.capacity - teacherSubject._count.enrollments,
       isFull: teacherSubject._count.enrollments >= teacherSubject.capacity,
     };
 
@@ -74,10 +75,10 @@ export async function GET(request, { params }) {
       data: result,
     });
   } catch (error) {
-    console.error('Error fetching teacher-subject:', error);
+    console.error("Error fetching teacher-subject:", error);
     return NextResponse.json(
-      { success: false, error: 'Failed to fetch teacher-subject assignment' },
-      { status: 500 }
+      { success: false, error: "Failed to fetch teacher-subject assignment" },
+      { status: 500 },
     );
   }
 }
@@ -101,19 +102,22 @@ export async function PUT(request, { params }) {
 
     if (!existing) {
       return NextResponse.json(
-        { success: false, error: 'Teacher-subject assignment not found' },
-        { status: 404 }
+        { success: false, error: "Teacher-subject assignment not found" },
+        { status: 404 },
       );
     }
 
     // If reducing capacity, check if new capacity is less than enrolled count
-    if (capacity !== undefined && parseInt(capacity) < existing._count.enrollments) {
+    if (
+      capacity !== undefined &&
+      parseInt(capacity) < existing._count.enrollments
+    ) {
       return NextResponse.json(
         {
           success: false,
-          error: `Cannot reduce capacity below current enrollment count (${existing._count.enrollments} students enrolled)`
+          error: `Cannot reduce capacity below current enrollment count (${existing._count.enrollments} students enrolled)`,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -145,14 +149,14 @@ export async function PUT(request, { params }) {
 
     return NextResponse.json({
       success: true,
-      message: 'Teacher-subject assignment updated successfully',
+      message: "Teacher-subject assignment updated successfully",
       data: teacherSubject,
     });
   } catch (error) {
-    console.error('Error updating teacher-subject:', error);
+    console.error("Error updating teacher-subject:", error);
     return NextResponse.json(
-      { success: false, error: 'Failed to update teacher-subject assignment' },
-      { status: 500 }
+      { success: false, error: "Failed to update teacher-subject assignment" },
+      { status: 500 },
     );
   }
 }
@@ -174,8 +178,8 @@ export async function DELETE(request, { params }) {
 
     if (!existing) {
       return NextResponse.json(
-        { success: false, error: 'Teacher-subject assignment not found' },
-        { status: 404 }
+        { success: false, error: "Teacher-subject assignment not found" },
+        { status: 404 },
       );
     }
 
@@ -183,9 +187,9 @@ export async function DELETE(request, { params }) {
       return NextResponse.json(
         {
           success: false,
-          error: `Cannot delete assignment with active enrollments (${existing._count.enrollments} students enrolled). Remove enrollments first or deactivate instead.`
+          error: `Cannot delete assignment with active enrollments (${existing._count.enrollments} students enrolled). Remove enrollments first or deactivate instead.`,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -195,13 +199,13 @@ export async function DELETE(request, { params }) {
 
     return NextResponse.json({
       success: true,
-      message: 'Teacher-subject assignment deleted successfully',
+      message: "Teacher-subject assignment deleted successfully",
     });
   } catch (error) {
-    console.error('Error deleting teacher-subject:', error);
+    console.error("Error deleting teacher-subject:", error);
     return NextResponse.json(
-      { success: false, error: 'Failed to delete teacher-subject assignment' },
-      { status: 500 }
+      { success: false, error: "Failed to delete teacher-subject assignment" },
+      { status: 500 },
     );
   }
 }
