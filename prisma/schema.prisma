@@ -42,8 +42,8 @@ model Staff {
   updatedAt       DateTime         @updatedAt
   resetOtp        String?
   resetOtpExpiry  DateTime?
-  teacherSubjects TeacherSubject[]
   enrollments     Enrollment[]
+  teacherSubjects TeacherSubject[]
 
   @@map("staff")
 }
@@ -77,14 +77,14 @@ model Student {
 }
 
 model Department {
-  id          Int            @id @default(autoincrement())
-  name        String         @unique
-  code        String         @unique
+  id          Int          @id @default(autoincrement())
+  name        String       @unique
+  code        String       @unique
   description String?
-  level       StudentLevel   @default(BACHELOR)
-  isActive    Boolean        @default(true)
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
+  isActive    Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  level       StudentLevel @default(BACHELOR)
   students    Student[]
   subjects    Subject[]
 
@@ -110,7 +110,6 @@ model Subject {
   @@map("subjects")
 }
 
-// Teacher-Subject assignment with capacity (for student teacher selection)
 model TeacherSubject {
   id           Int          @id @default(autoincrement())
   teacherId    Int
@@ -121,10 +120,9 @@ model TeacherSubject {
   academicYear String?
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
-
-  teacher     Staff        @relation(fields: [teacherId], references: [id], onDelete: Cascade)
-  subject     Subject      @relation(fields: [subjectId], references: [id], onDelete: Cascade)
-  enrollments Enrollment[]
+  enrollments  Enrollment[]
+  subject      Subject      @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  teacher      Staff        @relation(fields: [teacherId], references: [id], onDelete: Cascade)
 
   @@unique([teacherId, subjectId, semester, academicYear])
   @@map("teacher_subjects")
@@ -134,19 +132,18 @@ model Enrollment {
   id               Int              @id @default(autoincrement())
   studentId        Int
   subjectId        Int
-  teacherId        Int?
-  teacherSubjectId Int?
   semester         String?
   academicYear     String?
   status           EnrollmentStatus @default(ACTIVE)
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
-
-  student        Student         @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  subject        Subject         @relation(fields: [subjectId], references: [id], onDelete: Cascade)
-  teacher        Staff?          @relation(fields: [teacherId], references: [id])
-  teacherSubject TeacherSubject? @relation(fields: [teacherSubjectId], references: [id])
-  grade          Grade?
+  teacherId        Int?
+  teacherSubjectId Int?
+  student          Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  subject          Subject          @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  teacher          Staff?           @relation(fields: [teacherId], references: [id])
+  teacherSubject   TeacherSubject?  @relation(fields: [teacherSubjectId], references: [id])
+  grade            Grade?
 
   @@unique([studentId, subjectId, semester, academicYear])
   @@map("enrollments")
