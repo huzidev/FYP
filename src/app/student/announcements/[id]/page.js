@@ -1,16 +1,18 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
 import {
   ArrowLeft,
   Calendar,
   Clock,
+  Loader2,
   MessageCircle,
+  Reply,
   Send,
-  User,
   Sparkles,
+  User,
 } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import Header from "../../../../Component/Header";
 
 export default function AnnouncementDetailPage() {
@@ -23,6 +25,9 @@ export default function AnnouncementDetailPage() {
   const [submittingQuery, setSubmittingQuery] = useState(false);
   const [summarizing, setSummarizing] = useState(false);
   const [summary, setSummary] = useState(null);
+  const [replyingTo, setReplyingTo] = useState(null);
+  const [replyContent, setReplyContent] = useState("");
+  const [submittingReply, setSubmittingReply] = useState(false);
 
   // Mock current student - replace with actual auth context
   const currentStudent = {
@@ -263,22 +268,32 @@ export default function AnnouncementDetailPage() {
               <button
                 onClick={handleSummarize}
                 disabled={summarizing}
-                className="flex items-center px-4 py-2 from-purple-600 to-indigo-600 text-white rounded-lg hover:from-purple-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:from-purple-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {summarizing ? "Summarizing..." : "Summarize with AI"}
+                {summarizing ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Summarizing...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4" />
+                    <span>Summarize with AI</span>
+                  </>
+                )}
               </button>
             </div>
 
             {/* AI Summary Display */}
             {summary && (
-              <div className="mx-6 mb-6 p-6 from-purple-50 to-indigo-50 rounded-lg border border-purple-200">
+              <div className="mx-6 mb-6 p-6 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg border border-purple-200">
                 <div className="flex items-center mb-3">
                   <Sparkles className="text-purple-600 mr-2" />
                   <h3 className="text-lg font-semibold text-gray-900">
                     AI Summary
                   </h3>
                 </div>
-                <p className="text-gray-700 leading-relaxed">{summary}</p>
+                <div className="text-gray-700 leading-relaxed whitespace-pre-line">{summary}</div>
               </div>
             )}
           </div>
@@ -330,21 +345,58 @@ export default function AnnouncementDetailPage() {
                     {queries.map((query) => (
                       <div
                         key={query.id}
-                        className="p-4 bg-gray-50 rounded-lg border border-gray-200"
+                        className="bg-gray-50 rounded-lg border border-gray-200 overflow-hidden"
                       >
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex items-center text-sm text-gray-600">
-                            <User className="mr-2" />
-                            <span className="font-medium">
-                              Student #{query.userId}
-                            </span>
+                        <div className="p-4">
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex items-center text-sm text-gray-600">
+                              <User className="w-4 h-4 mr-2" />
+                              <span className="font-medium">
+                                {query.student?.fullName || `Student #${query.userId}`}
+                              </span>
+                              {query.student?.studentId && (
+                                <span className="ml-2 text-xs text-gray-500">
+                                  ({query.student.studentId})
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center text-xs text-gray-500">
+                              <Clock className="w-3 h-3 mr-1" />
+                              {formatDate(query.createdAt)}
+                            </div>
                           </div>
-                          <div className="flex items-center text-xs text-gray-500">
-                            <Clock className="mr-1" />
-                            {formatDate(query.createdAt)}
-                          </div>
+                          <p className="text-gray-700">{query.content}</p>
                         </div>
-                        <p className="text-gray-700">{query.content}</p>
+
+                        {/* Replies Section */}
+                        {query.replies && query.replies.length > 0 && (
+                          <div className="bg-white border-t border-gray-200">
+                            <div className="p-3 space-y-3">
+                              {query.replies.map((reply) => (
+                                <div
+                                  key={reply.id}
+                                  className="pl-4 border-l-2 border-indigo-200"
+                                >
+                                  <div className="flex items-center justify-between mb-1">
+                                    <div className="flex items-center text-sm">
+                                      <Reply className="w-3 h-3 mr-2 text-indigo-600" />
+                                      <span className="font-medium text-indigo-600">
+                                        {reply.repliedBy?.fullName || 'Staff'}
+                                      </span>
+                                      <span className="ml-2 px-2 py-0.5 bg-indigo-100 text-indigo-700 text-xs rounded-full">
+                                        {reply.repliedBy?.role || reply.repliedByType}
+                                      </span>
+                                    </div>
+                                    <span className="text-xs text-gray-500">
+                                      {formatDate(reply.createdAt)}
+                                    </span>
+                                  </div>
+                                  <p className="text-sm text-gray-700">{reply.content}</p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>

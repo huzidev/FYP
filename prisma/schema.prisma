@@ -8,70 +8,73 @@ datasource db {
 }
 
 model Admin {
-  id             Int       @id @default(autoincrement())
+  id             Int                      @id @default(autoincrement())
   fullName       String
-  email          String    @unique
+  email          String                   @unique
   password       String
   role           AdminRole
   phone          String?
   address        String?
-  isActive       Boolean   @default(true)
+  isActive       Boolean                  @default(true)
   lastLoginAt    DateTime?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  createdAt      DateTime                 @default(now())
+  updatedAt      DateTime                 @updatedAt
   resetOtp       String?
   resetOtpExpiry DateTime?
+  queryReplies   AnnouncementQueryReply[]
 
   @@map("admins")
 }
 
 model Staff {
-  id              Int              @id @default(autoincrement())
+  id              Int                      @id @default(autoincrement())
   fullName        String
-  email           String           @unique
+  email           String                   @unique
   password        String
   role            StaffRole
-  staffId         String           @unique
+  staffId         String                   @unique
   phone           String?
   address         String?
   salary          Float?
   hireDate        DateTime?
-  isActive        Boolean          @default(true)
+  isActive        Boolean                  @default(true)
   lastLoginAt     DateTime?
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
   resetOtp        String?
   resetOtpExpiry  DateTime?
   enrollments     Enrollment[]
   teacherSubjects TeacherSubject[]
+  queryReplies    AnnouncementQueryReply[]
 
   @@map("staff")
 }
 
 model Student {
-  id             Int          @id @default(autoincrement())
+  id             Int                   @id @default(autoincrement())
   fullName       String
-  email          String       @unique
+  email          String                @unique
   password       String
-  studentId      String       @unique
+  studentId      String                @unique
   level          StudentLevel
   gender         Gender?
   phone          String?
   address        String?
   dateOfBirth    DateTime?
   fatherName     String?
-  cnic           String?      @unique
+  cnic           String?               @unique
   admissionDate  DateTime?
-  isActive       Boolean      @default(true)
+  isActive       Boolean               @default(true)
   lastLoginAt    DateTime?
   departmentId   Int
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
   resetOtp       String?
   resetOtpExpiry DateTime?
   enrollments    Enrollment[]
   fees           Fee?
-  department     Department   @relation(fields: [departmentId], references: [id])
+  department     Department            @relation(fields: [departmentId], references: [id])
+  queries        AnnouncementQuery[]
 
   @@map("students")
 }
@@ -229,15 +232,32 @@ model Announcement {
 }
 
 model AnnouncementQuery {
-  id             Int          @id @default(autoincrement())
+  id             Int                    @id @default(autoincrement())
   content        String
   announcementId Int
   userId         Int
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+  announcement   Announcement           @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  student        Student                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  replies        AnnouncementQueryReply[]
 
   @@map("announcement_queries")
+}
+
+model AnnouncementQueryReply {
+  id          Int      @id @default(autoincrement())
+  content     String
+  queryId     Int
+  repliedById Int
+  repliedByType UserType
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  query       AnnouncementQuery @relation(fields: [queryId], references: [id], onDelete: Cascade)
+  admin       Admin?   @relation(fields: [repliedById], references: [id], onDelete: Cascade, map: "query_reply_admin_fk")
+  staff       Staff?   @relation(fields: [repliedById], references: [id], onDelete: Cascade, map: "query_reply_staff_fk")
+
+  @@map("announcement_query_replies")
 }
 
 enum AdminRole {

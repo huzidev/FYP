@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import { NextResponse } from 'next/server';
 
 const prisma = new PrismaClient();
 
@@ -69,6 +69,21 @@ export async function GET(request) {
 
     const queries = await prisma.announcementQuery.findMany({
       where: whereClause,
+      include: {
+        student: {
+          select: {
+            id: true,
+            fullName: true,
+            studentId: true,
+            email: true
+          }
+        },
+        replies: {
+          orderBy: {
+            createdAt: 'asc'
+          }
+        }
+      },
       orderBy: {
         createdAt: 'desc'
       },
@@ -76,12 +91,38 @@ export async function GET(request) {
       take: limit
     });
 
+    // Fetch admin and staff details for replies
+    const queriesWithReplies = await Promise.all(
+      queries.map(async (query) => {
+        const repliesWithDetails = await Promise.all(
+          query.replies.map(async (reply) => {
+            let repliedBy = null;
+            if (reply.repliedByType === 'ADMIN' || reply.repliedByType === 'SUPER_ADMIN') {
+              const admin = await prisma.admin.findUnique({
+                where: { id: reply.repliedById },
+                select: { id: true, fullName: true, role: true }
+              });
+              repliedBy = { ...admin, type: reply.repliedByType };
+            } else if (reply.repliedByType === 'TEACHER' || reply.repliedByType === 'ADMISSION') {
+              const staff = await prisma.staff.findUnique({
+                where: { id: reply.repliedById },
+                select: { id: true, fullName: true, role: true, staffId: true }
+              });
+              repliedBy = { ...staff, type: reply.repliedByType };
+            }
+            return { ...reply, repliedBy };
+          })
+        );
+        return { ...query, replies: repliesWithDetails };
+      })
+    );
+
     const total = await prisma.announcementQuery.count({
       where: whereClause
     });
 
     return NextResponse.json({
-      queries,
+      queries: queriesWithReplies,
       pagination: {
         page,
         limit,

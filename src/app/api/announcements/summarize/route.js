@@ -5,14 +5,36 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 async function summarizePost(postText) {
   const model = genAI.getGenerativeModel({
-    model: 'gemini-1.5-flash', // fast & cheap
+    model: 'gemini-2.5-flash',
   });
 
-  const prompt = `
-  Summarize the following post in 3–4 concise bullet points:
+  const prompt = `You are an expert educational content analyzer specializing in academic announcements and institutional communications.
 
-  ${postText}
-  `;
+Your task is to provide a comprehensive yet concise summary of the following announcement. Structure your summary as follows:
+
+**Main Purpose**: Start with one clear sentence stating the primary objective or topic of the announcement.
+
+**Key Points**: Present the most important information in 3-5 well-structured bullet points, focusing on:
+- Critical details (dates, deadlines, requirements)
+- Action items or what students/staff need to do
+- Important conditions, eligibility, or restrictions
+- Benefits or consequences
+
+**Target Audience**: If mentioned or implied, note who this announcement is relevant to.
+
+**Urgency**: If there are time-sensitive elements, highlight them clearly.
+
+Guidelines:
+- Be clear, accurate, and objective
+- Preserve all important dates, numbers, and specific requirements
+- Use professional academic tone
+- Avoid unnecessary elaboration
+- Ensure the summary is actionable and informative
+
+Announcement Content:
+${postText}
+
+Provide the summary in a clean, well-formatted manner without using markdown headers (avoid using # or **).`;
 
   const result = await model.generateContent(prompt);
   const response = result.response.text();
