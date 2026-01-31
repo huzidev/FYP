@@ -1,32 +1,55 @@
 "use client";
 
-import { SubjectService, TeacherSubjectService } from "@/lib/api";
+import Modal from "@/Component/Common/Modal";
+import StudentEnrollmentModal from "@/Component/Admin/Enrollment/StudentEnrollmentModal";
+import { StaffService, SubjectService, TeacherSubjectService } from "@/lib/api";
 import { getCurrentUser } from "@/lib/auth";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import { FiPlus, FiUsers } from "react-icons/fi";
+import { toast } from "react-toastify";
 
 export default function StaffTeacherAssignmentsPage() {
   const router = useRouter();
+  const [currentUser, setCurrentUser] = useState(null);
   const [assignments, setAssignments] = useState([]);
+  const [teachers, setTeachers] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Modal states
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isEnrollOpen, setIsEnrollOpen] = useState(false);
+  const [selectedAssignment, setSelectedAssignment] = useState(null);
+
+  // Form state
+  const [form, setForm] = useState({
+    teacherId: "",
+    subjectId: "",
+    capacity: 50,
+    semester: "",
+    academicYear: "",
+  });
 
   // Filters
   const [filterSubject, setFilterSubject] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [showOnlyAvailable, setShowOnlyAvailable] = useState(false);
 
-  // Check if user is admission staff
+  // Check user and set permissions
   useEffect(() => {
     const user = getCurrentUser();
     if (!user) {
       router.push("/staff/signin");
       return;
     }
-    if (user.role !== "ADMISSION") {
+    // Allow both ADMISSION and TEACHER roles
+    if (user.role !== "ADMISSION" && user.role !== "TEACHER") {
       router.push("/staff/dashboard");
+      return;
     }
+    setCurrentUser(user);
   }, [router]);
 
   // Fetch assignments
@@ -47,33 +70,74 @@ export default function StaffTeacherAssignmentsPage() {
     }
   }, [filterSubject]);
 
-  // Fetch subjects for filter
-  const fetchSubjects = useCallback(async () => {
+  // Fetch teachers and subjects for dropdowns
+  const fetchDropdownData = useCallback(async () => {
     try {
-      const response = await SubjectService.getAll();
-      setSubjects(response.data.data || []);
+      const [teachersRes, subjectsRes] = await Promise.all([
+        StaffService.getAll({ role: "TEACHER", limit: 1000 }),
+        SubjectService.getAll(),
+      ]);
+      setTeachers(teachersRes.data.data || []);
+      setSubjects(subjectsRes.data.data || []);
     } catch (err) {
-      console.error("Error fetching subjects:", err);
+      console.error("Error fetching dropdown data:", err);
     }
   }, []);
 
   useEffect(() => {
-    fetchAssignments();
-    fetchSubjects();
-  }, [fetchAssignments, fetchSubjects]);
+    if (currentUser) {
+      fetchAssignments();
+      fetchDropdownData();
+    }
+  }, [currentUser, fetchAssignments, fetchDropdownData]);
+
+  // Create assignment
+  const handleCreate = async (e) => {
+    e.preventDefault();
+    if (!form.teacherId || !form.subjectId) {
+      toast.error("Please select both teacher and subject");
+      return;
+    }
+
+    try {
+      await TeacherSubjectService.create({
+        teacherId: parseInt(form.teacherId),
+        subjectId: parseInt(form.subjectId),
+        capacity: parseInt(form.capacity) || 50,
+        semester: form.semester || null,
+        academicYear: form.academicYear || null,
+      });
+      toast.success("Teacher assigned to subject successfully!");
+      resetForm();
+      setIsCreateOpen(false);
+      fetchAssignments();
+    } catch (err) {
+      const message = err?.data?.error || "Failed to create assignment";
+      toast.error(message);
+    }
+  };
+
+  // Reset form
+  const resetForm = () => {
+    setForm({
+      teacherId: "",
+      subjectId: "",
+      capacity: 50,
+      semester: "",
+      academicYear: "",
+    });
+  };
 
   // Filter assignments
   const filteredAssignments = assignments.filter((a) => {
-    // Search filter
     const searchLower = searchTerm.toLowerCase();
     const matchesSearch =
       !searchTerm ||
-      a.teacher?.fullName.toLowerCase().includes(searchLower) ||
-      a.teacher?.staffId.toLowerCase().includes(searchLower) ||
-      a.subject?.name.toLowerCase().includes(searchLower) ||
-      a.subject?.code.toLowerCase().includes(searchLower);
+      a.teacher?.fullName?.toLowerCase().includes(searchLower) ||
+      a.teacher?.staffId?.toLowerCase().includes(searchLower) ||
+      a.subject?.name?.toLowerCase().includes(searchLower) ||
+      a.subject?.code?.toLowerCase().includes(searchLower);
 
-    // Availability filter
     const matchesAvailability = !showOnlyAvailable || !a.isFull;
 
     return matchesSearch && matchesAvailability;
@@ -109,9 +173,21 @@ export default function StaffTeacherAssignmentsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-white mb-2">Teacher Assignments</h1>
-        <p className="text-gray-400">View available teachers per subject for student enrollment</p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-white mb-2">Teacher Assignments</h1>
+          <p className="text-gray-400">View and manage teacher-subject assignments</p>
+        </div>
+        <button
+          onClick={() => {
+            resetForm();
+            setIsCreateOpen(true);
+          }}
+          className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition flex items-center gap-2"
+        >
+          <FiPlus className="h-4 w-4" />
+          New Assignment
+        </button>
       </div>
 
       {/* Stats Cards */}
@@ -195,7 +271,7 @@ export default function StaffTeacherAssignmentsPage() {
         </div>
       ) : (
         <div className="space-y-4">
-          {Object.values(groupedBySubject).map(({ subject, teachers }) => (
+          {Object.values(groupedBySubject).map(({ subject, teachers: teacherAssignments }) => (
             <div key={subject.id} className="bg-[#25252b] rounded-xl border border-[#35353d] overflow-hidden">
               {/* Subject Header */}
               <div className="bg-[#1d1d24] px-6 py-4 border-b border-[#35353d]">
@@ -206,10 +282,10 @@ export default function StaffTeacherAssignmentsPage() {
                     <p className="text-gray-400 text-sm">{subject.department?.name || "No Department"}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-gray-400 text-sm">{teachers.length} Teacher(s)</p>
+                    <p className="text-gray-400 text-sm">{teacherAssignments.length} Teacher(s)</p>
                     <p className="text-sm">
                       <span className="text-green-400">
-                        {teachers.filter((t) => !t.isFull).length} available
+                        {teacherAssignments.filter((t) => !t.isFull).length} available
                       </span>
                     </p>
                   </div>
@@ -218,7 +294,7 @@ export default function StaffTeacherAssignmentsPage() {
 
               {/* Teachers List */}
               <div className="divide-y divide-[#35353d]">
-                {teachers.map((assignment) => (
+                {teacherAssignments.map((assignment) => (
                   <div
                     key={assignment.id}
                     className={`px-6 py-4 flex justify-between items-center ${
@@ -234,7 +310,7 @@ export default function StaffTeacherAssignmentsPage() {
                         <p className="text-gray-400 text-sm">{assignment.teacher?.staffId}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-6">
+                    <div className="flex items-center gap-4">
                       {/* Availability */}
                       <div className="text-right">
                         <div className="flex items-center gap-2">
@@ -271,6 +347,17 @@ export default function StaffTeacherAssignmentsPage() {
                       >
                         {assignment.isFull ? "Full" : "Available"}
                       </span>
+                      {/* Enroll Students Button */}
+                      <button
+                        onClick={() => {
+                          setSelectedAssignment(assignment);
+                          setIsEnrollOpen(true);
+                        }}
+                        className="p-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition"
+                        title="Enroll Students"
+                      >
+                        <FiUsers className="h-4 w-4" />
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -285,14 +372,115 @@ export default function StaffTeacherAssignmentsPage() {
         <div className="flex items-start gap-3">
           <span className="text-2xl">ℹ️</span>
           <div>
-            <p className="text-blue-300 font-medium">Read-Only View</p>
+            <p className="text-blue-300 font-medium">Staff Access</p>
             <p className="text-gray-400 text-sm">
-              This page shows teacher assignments for reference during student enrollment.
-              To create or modify assignments, please contact an administrator.
+              You can create new teacher assignments and enroll students.
+              For editing or deleting assignments, please contact an administrator.
             </p>
           </div>
         </div>
       </div>
+
+      {/* Create Assignment Modal */}
+      <Modal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} title="New Teacher Assignment" size="md">
+        <form onSubmit={handleCreate} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1">Teacher *</label>
+            <select
+              value={form.teacherId}
+              onChange={(e) => setForm({ ...form, teacherId: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-600 rounded-md bg-[#1e1e26] text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              required
+            >
+              <option value="">Select a teacher...</option>
+              {teachers.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.fullName} ({t.staffId})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1">Subject *</label>
+            <select
+              value={form.subjectId}
+              onChange={(e) => setForm({ ...form, subjectId: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-600 rounded-md bg-[#1e1e26] text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              required
+            >
+              <option value="">Select a subject...</option>
+              {subjects.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.code} - {s.name} ({s.department?.name || "No Dept"})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1">Capacity</label>
+            <input
+              type="number"
+              value={form.capacity}
+              onChange={(e) => setForm({ ...form, capacity: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-600 rounded-md bg-[#1e1e26] text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              min="1"
+              placeholder="50"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1">Semester</label>
+              <input
+                type="text"
+                value={form.semester}
+                onChange={(e) => setForm({ ...form, semester: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-600 rounded-md bg-[#1e1e26] text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="e.g., Fall 2024"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1">Academic Year</label>
+              <input
+                type="text"
+                value={form.academicYear}
+                onChange={(e) => setForm({ ...form, academicYear: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-600 rounded-md bg-[#1e1e26] text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="e.g., 2024-2025"
+              />
+            </div>
+          </div>
+
+          <div className="flex gap-2 justify-end pt-4">
+            <button
+              type="button"
+              onClick={() => setIsCreateOpen(false)}
+              className="px-4 py-2 text-gray-300 border border-gray-600 rounded-lg hover:border-gray-500 transition"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition"
+            >
+              Create Assignment
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Student Enrollment Modal */}
+      <StudentEnrollmentModal
+        isOpen={isEnrollOpen}
+        onClose={() => {
+          setIsEnrollOpen(false);
+          setSelectedAssignment(null);
+        }}
+        assignment={selectedAssignment}
+        onEnrollmentChange={fetchAssignments}
+      />
     </div>
   );
 }

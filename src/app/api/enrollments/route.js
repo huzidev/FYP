@@ -8,6 +8,7 @@ export async function GET(request) {
     const studentId = searchParams.get('studentId');
     const subjectId = searchParams.get('subjectId');
     const teacherId = searchParams.get('teacherId');
+    const teacherSubjectId = searchParams.get('teacherSubjectId');
     const status = searchParams.get('status');
     const semester = searchParams.get('semester');
     const academicYear = searchParams.get('academicYear');
@@ -16,6 +17,7 @@ export async function GET(request) {
       ...(studentId && { studentId: parseInt(studentId) }),
       ...(subjectId && { subjectId: parseInt(subjectId) }),
       ...(teacherId && { teacherId: parseInt(teacherId) }),
+      ...(teacherSubjectId && { teacherSubjectId: parseInt(teacherSubjectId) }),
       ...(status && { status }),
       ...(semester && { semester }),
       ...(academicYear && { academicYear }),

@@ -1,9 +1,10 @@
 "use client";
 
 import Modal from "@/Component/Common/Modal";
+import StudentEnrollmentModal from "@/Component/Admin/Enrollment/StudentEnrollmentModal";
 import { StaffService, SubjectService, TeacherSubjectService } from "@/lib/api";
 import { useCallback, useEffect, useState } from "react";
-import { FiEdit2, FiPlus, FiTrash2 } from "react-icons/fi";
+import { FiEdit2, FiPlus, FiTrash2, FiUsers } from "react-icons/fi";
 import { toast } from "react-toastify";
 
 export default function TeacherAssignmentsPage() {
@@ -17,6 +18,7 @@ export default function TeacherAssignmentsPage() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isEnrollOpen, setIsEnrollOpen] = useState(false);
   const [selectedAssignment, setSelectedAssignment] = useState(null);
 
   // Form state
@@ -351,6 +353,16 @@ export default function TeacherAssignmentsPage() {
                     <td className="px-6 py-4">
                       <div className="flex justify-center gap-2">
                         <button
+                          onClick={() => {
+                            setSelectedAssignment(assignment);
+                            setIsEnrollOpen(true);
+                          }}
+                          className="p-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition"
+                          title="Enroll Students"
+                        >
+                          <FiUsers className="h-4 w-4" />
+                        </button>
+                        <button
                           onClick={() => openEditModal(assignment)}
                           className="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition"
                           title="Edit"
@@ -570,6 +582,17 @@ export default function TeacherAssignmentsPage() {
           </div>
         </div>
       </Modal>
+
+      {/* Student Enrollment Modal */}
+      <StudentEnrollmentModal
+        isOpen={isEnrollOpen}
+        onClose={() => {
+          setIsEnrollOpen(false);
+          setSelectedAssignment(null);
+        }}
+        assignment={selectedAssignment}
+        onEnrollmentChange={fetchAssignments}
+      />
     </div>
   );
 }
