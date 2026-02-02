@@ -10,7 +10,7 @@ export async function POST(req) {
       include: {
         enrollments: {
           where: { semester, academicYear },
-          include: { subject: true },
+          include: { subject: true }, // subject includes ratePerCrHr
         },
         department: true,
       },
@@ -25,13 +25,8 @@ export async function POST(req) {
 
     /* ---- Tuition Fee Calculation ---- */
     let tuitionTotal = 0;
-
     for (const enroll of student.enrollments) {
-      const fee = await prisma.subjectFee.findUnique({
-        where: { subjectId: enroll.subjectId },
-      });
-
-      tuitionTotal += fee.ratePerCrHr * enroll.subject.creditHours;
+      tuitionTotal += enroll.subject.ratePerCrHr * enroll.subject.creditHours;
     }
 
     /* ---- Department Fixed Fees ---- */
@@ -44,20 +39,40 @@ export async function POST(req) {
 
     /* ---- Arrears ---- */
     const unpaid = await prisma.feeVoucher.aggregate({
-      where: {
-        studentId,
-        status: { not: "PAID" },
-      },
+      where: { studentId, status: { not: "PAID" } },
       _sum: { totalAmount: true },
     });
-
     const arrears = unpaid._sum.totalAmount || 0;
 
     /* ---- Voucher Totals ---- */
     const totalAmount = tuitionTotal + fixedTotal + arrears + 60; // Bank charges
-
     const challanNo = `SMIU-${Date.now()}`;
     const bill1Id = `1BILL-${Math.floor(Math.random() * 1000000000000)}`;
+
+    /* ---- Ensure Particulars exist for arrears and bank charges ---- */
+    const specialParticulars = await prisma.particular.findMany({
+      where: { id: { in: [999, 1000] } },
+    });
+    const validSpecialIds = specialParticulars.map((p) => p.id);
+
+    /* ---- Prepare Voucher Items ---- */
+    const itemsData = [
+      { particularId: 1, amount: tuitionTotal }, // Tuition
+      ...deptFees.map((df) => ({
+        particularId: df.particularId,
+        amount: df.amount,
+      })),
+    ];
+
+    // Only add arrears if Particular exists
+    if (validSpecialIds.includes(999)) {
+      itemsData.push({ particularId: 999, amount: arrears });
+    }
+
+    // Only add bank charges if Particular exists
+    if (validSpecialIds.includes(1000)) {
+      itemsData.push({ particularId: 1000, amount: 60 });
+    }
 
     /* ---- Create Voucher ---- */
     const voucher = await prisma.feeVoucher.create({
@@ -70,17 +85,21 @@ export async function POST(req) {
         validTill: new Date(Date.now() + 15 * 86400000),
         totalAmount,
         arrears,
-        items: {
-          create: [
-            { particularId: 1, amount: tuitionTotal },
-            ...deptFees.map((df) => ({
-              particularId: df.particularId,
-              amount: df.amount,
-            })),
-            { particularId: 999, amount: arrears },
-            { particularId: 1000, amount: 60 },
-          ],
-        },
+        items: { create: itemsData },
+      },
+    });
+
+    /* ---- Create Fee Record ---- */
+    await prisma.fee.create({
+      data: {
+        amount: totalAmount,
+        dueAmount: totalAmount,
+        status: "PENDING",
+        semester,
+        academicYear,
+        studentId,
+        description: "Semester Fee Voucher",
+        dueDate: new Date(Date.now() + 15 * 86400000),
       },
     });
 
@@ -88,7 +107,7 @@ export async function POST(req) {
   } catch (error) {
     console.error(error);
     return NextResponse.json(
-      { message: "Voucher generation failed" },
+      { message: "Voucher generation failed", error },
       { status: 500 },
     );
   }

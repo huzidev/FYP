@@ -8,6 +8,7 @@ export async function GET(request) {
     const studentId = searchParams.get("studentId");
     const subjectId = searchParams.get("subjectId");
     const teacherId = searchParams.get("teacherId");
+    const teacherSubjectId = searchParams.get("teacherSubjectId"); // <-- fix here
     const status = searchParams.get("status");
     const semester = searchParams.get("semester");
     const academicYear = searchParams.get("academicYear");
