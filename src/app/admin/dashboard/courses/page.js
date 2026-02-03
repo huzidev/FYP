@@ -23,10 +23,24 @@ export default function CoursesPage() {
   const [isCreateDeptOpen, setIsCreateDeptOpen] = useState(false);
   const [isAddSubjectOpen, setIsAddSubjectOpen] = useState(false);
   const [isEnrollStudentOpen, setIsEnrollStudentOpen] = useState(false);
+  const [isViewSubjectOpen, setIsViewSubjectOpen] = useState(false);
+  const [isEditSubjectOpen, setIsEditSubjectOpen] = useState(false);
+  const [selectedSubject, setSelectedSubject] = useState(null);
+  const [subjectEnrollments, setSubjectEnrollments] = useState([]);
   
   // Form states
   const [deptForm, setDeptForm] = useState({ name: '', code: '', description: '', level: 'BACHELOR' });
-  const [subjectForm, setSubjectForm] = useState({ name: '', code: '', creditHours: 3, semester: '', description: '' });
+  const [subjectForm, setSubjectForm] = useState({ 
+    name: '', 
+    code: '', 
+    creditHours: 3, 
+    semester: '', 
+    description: '',
+    dayOfWeek: '',
+    startTime: '',
+    endTime: '',
+    classroom: ''
+  });
 
   // Enrollment modal states
   const [enrollSearch, setEnrollSearch] = useState('');
@@ -141,7 +155,17 @@ export default function CoursesPage() {
         creditHours: parseInt(subjectForm.creditHours)
       });
       toast.success("Subject added successfully!");
-      setSubjectForm({ name: '', code: '', creditHours: 3, semester: '', description: '' });
+      setSubjectForm({ 
+        name: '', 
+        code: '', 
+        creditHours: 3, 
+        semester: '', 
+        description: '',
+        dayOfWeek: '',
+        startTime: '',
+        endTime: '',
+        classroom: ''
+      });
       setIsAddSubjectOpen(false);
       fetchDeptDetails(selectedDept.id);
     } catch (err) {
@@ -260,6 +284,64 @@ export default function CoursesPage() {
   const getAddableSubjects = () => {
     const deptSubjectIds = subjects.map(s => s.id);
     return allSubjects.filter(s => !deptSubjectIds.includes(s.id));
+  };
+
+  // Handle view subject
+  const handleViewSubject = async (subject) => {
+    setSelectedSubject(subject);
+    try {
+      // Fetch enrollments for this subject
+      const response = await EnrollmentService.getAll({ subjectId: subject.id });
+      setSubjectEnrollments(response.data.data || []);
+    } catch (error) {
+      console.error('Error fetching subject enrollments:', error);
+      setSubjectEnrollments([]);
+    }
+    setIsViewSubjectOpen(true);
+  };
+
+  // Handle edit subject
+  const handleEditSubject = (subject) => {
+    setSelectedSubject(subject);
+    setSubjectForm({
+      name: subject.name,
+      code: subject.code,
+      creditHours: subject.creditHours,
+      semester: subject.semester || '',
+      description: subject.description || '',
+      dayOfWeek: subject.dayOfWeek || '',
+      startTime: subject.startTime || '',
+      endTime: subject.endTime || '',
+      classroom: subject.classroom || ''
+    });
+    setIsEditSubjectOpen(true);
+  };
+
+  // Handle update subject
+  const handleUpdateSubject = async (e) => {
+    e.preventDefault();
+    if (!subjectForm.name || !subjectForm.code) {
+      toast.error("Name and code are required");
+      return;
+    }
+
+    if (!selectedSubject || !selectedSubject.id) {
+      toast.error("Subject ID is missing");
+      return;
+    }
+
+    try {
+      await SubjectService.update(selectedSubject.id, {
+        ...subjectForm,
+        creditHours: parseInt(subjectForm.creditHours)
+      });
+      toast.success("Subject updated successfully!");
+      setIsEditSubjectOpen(false);
+      setSelectedSubject(null);
+      fetchDeptDetails(selectedDept.id);
+    } catch (err) {
+      toast.error(err.message || "Failed to update subject");
+    }
   };
 
   if (loading && activeTab === "departments") {
@@ -506,13 +588,15 @@ export default function CoursesPage() {
                     <th className="border border-gray-600 px-4 py-2 text-left">Name</th>
                     <th className="border border-gray-600 px-4 py-2 text-left">Code</th>
                     <th className="border border-gray-600 px-4 py-2 text-left">Credit Hours</th>
-                    <th className="border border-gray-600 px-4 py-2 text-left">Semester</th>
+                    <th className="border border-gray-600 px-4 py-2 text-left">Schedule</th>
+                    <th className="border border-gray-600 px-4 py-2 text-left">Room</th>
+                    <th className="border border-gray-600 px-4 py-2 text-center">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {subjects.length === 0 ? (
                     <tr>
-                      <td colSpan="5" className="text-center py-8 text-gray-400">
+                      <td colSpan="7" className="text-center py-8 text-gray-400">
                         No subjects found
                       </td>
                     </tr>
@@ -523,7 +607,35 @@ export default function CoursesPage() {
                         <td className="border border-gray-600 px-4 py-2">{subject.name}</td>
                         <td className="border border-gray-600 px-4 py-2">{subject.code}</td>
                         <td className="border border-gray-600 px-4 py-2">{subject.creditHours}</td>
-                        <td className="border border-gray-600 px-4 py-2">{subject.semester || 'N/A'}</td>
+                        <td className="border border-gray-600 px-4 py-2">
+                          {subject.dayOfWeek && subject.startTime && subject.endTime ? (
+                            <div className="text-sm">
+                              <div className="font-medium">{subject.dayOfWeek}</div>
+                              <div className="text-gray-400">{subject.startTime} - {subject.endTime}</div>
+                            </div>
+                          ) : (
+                            <span className="text-gray-500">Not scheduled</span>
+                          )}
+                        </td>
+                        <td className="border border-gray-600 px-4 py-2">
+                          {subject.classroom || <span className="text-gray-500">TBA</span>}
+                        </td>
+                        <td className="border border-gray-600 px-4 py-2 text-center">
+                          <div className="flex gap-2 justify-center">
+                            <button
+                              onClick={() => handleViewSubject(subject)}
+                              className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition"
+                            >
+                              View
+                            </button>
+                            <button
+                              onClick={() => handleEditSubject(subject)}
+                              className="px-2 py-1 bg-green-600 hover:bg-green-700 text-white text-xs rounded transition"
+                            >
+                              Edit
+                            </button>
+                          </div>
+                        </td>
                       </tr>
                     ))
                   )}
@@ -685,6 +797,70 @@ export default function CoursesPage() {
               placeholder="Subject description..."
               rows="2"
             />
+          </div>
+
+          {/* Schedule Section */}
+          <div className="border-t border-gray-600 pt-4">
+            <h4 className="text-lg font-medium text-white mb-3">Class Schedule</h4>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  Day of Week
+                </label>
+                <select
+                  value={subjectForm.dayOfWeek}
+                  onChange={(e) => setSubjectForm({ ...subjectForm, dayOfWeek: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-600 rounded-md bg-[#1e1e26] text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                >
+                  <option value="">Select Day</option>
+                  <option value="MONDAY">Monday</option>
+                  <option value="TUESDAY">Tuesday</option>
+                  <option value="WEDNESDAY">Wednesday</option>
+                  <option value="THURSDAY">Thursday</option>
+                  <option value="FRIDAY">Friday</option>
+                  <option value="SATURDAY">Saturday</option>
+                  <option value="SUNDAY">Sunday</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  Classroom
+                </label>
+                <input
+                  type="text"
+                  value={subjectForm.classroom}
+                  onChange={(e) => setSubjectForm({ ...subjectForm, classroom: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-600 rounded-md bg-[#1e1e26] text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  placeholder="e.g., Room A101"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 mt-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  Start Time
+                </label>
+                <input
+                  type="time"
+                  value={subjectForm.startTime}
+                  onChange={(e) => setSubjectForm({ ...subjectForm, startTime: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-600 rounded-md bg-[#1e1e26] text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  End Time
+                </label>
+                <input
+                  type="time"
+                  value={subjectForm.endTime}
+                  onChange={(e) => setSubjectForm({ ...subjectForm, endTime: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-600 rounded-md bg-[#1e1e26] text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+            </div>
           </div>
 
           <div className="flex gap-2 justify-end">
@@ -875,6 +1051,296 @@ export default function CoursesPage() {
             </button>
           </div>
         </div>
+      </Modal>
+      
+      {/* View Subject Modal */}
+      <Modal
+        isOpen={isViewSubjectOpen}
+        onClose={() => {
+          setIsViewSubjectOpen(false);
+          setSelectedSubject(null);
+          setSubjectEnrollments([]);
+        }}
+        title={`Subject Details - ${selectedSubject?.name || ''}`}
+        size="xl"
+      >
+        {selectedSubject && (
+          <div className="space-y-6">
+            {/* Subject Info */}
+            <div className="bg-[#1e1e26] rounded-lg p-4 border border-gray-600">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                  <p className="text-sm text-gray-400">Subject Name</p>
+                  <p className="text-white font-medium">{selectedSubject.name}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-400">Code</p>
+                  <p className="text-white font-medium">{selectedSubject.code}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-400">Credit Hours</p>
+                  <p className="text-white font-medium">{selectedSubject.creditHours}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-400">Semester</p>
+                  <p className="text-white font-medium">{selectedSubject.semester || 'N/A'}</p>
+                </div>
+              </div>
+              
+              {selectedSubject.description && (
+                <div className="mt-4">
+                  <p className="text-sm text-gray-400">Description</p>
+                  <p className="text-white">{selectedSubject.description}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Schedule Info */}
+            <div className="bg-[#1e1e26] rounded-lg p-4 border border-gray-600">
+              <h4 className="text-lg font-medium text-white mb-3">Class Schedule</h4>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                  <p className="text-sm text-gray-400">Day</p>
+                  <p className="text-white font-medium">
+                    {selectedSubject.dayOfWeek ? selectedSubject.dayOfWeek.charAt(0) + selectedSubject.dayOfWeek.slice(1).toLowerCase() : 'Not set'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-400">Time</p>
+                  <p className="text-white font-medium">
+                    {selectedSubject.startTime && selectedSubject.endTime 
+                      ? `${selectedSubject.startTime} - ${selectedSubject.endTime}` 
+                      : 'Not set'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-400">Classroom</p>
+                  <p className="text-white font-medium">{selectedSubject.classroom || 'Not assigned'}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-400">Enrolled Students</p>
+                  <p className="text-green-400 font-bold">{subjectEnrollments.length}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Enrolled Students */}
+            <div className="bg-[#1e1e26] rounded-lg p-4 border border-gray-600">
+              <h4 className="text-lg font-medium text-white mb-3">Enrolled Students</h4>
+              {subjectEnrollments.length === 0 ? (
+                <p className="text-gray-400">No students enrolled in this subject</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-white">
+                    <thead className="bg-[#25252b]">
+                      <tr>
+                        <th className="text-left px-4 py-2 border border-gray-600">Student ID</th>
+                        <th className="text-left px-4 py-2 border border-gray-600">Name</th>
+                        <th className="text-left px-4 py-2 border border-gray-600">Email</th>
+                        <th className="text-left px-4 py-2 border border-gray-600">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {subjectEnrollments.map((enrollment) => (
+                        <tr key={enrollment.id} className="hover:bg-[#2d2d39]">
+                          <td className="px-4 py-2 border border-gray-600 text-indigo-400 font-mono">
+                            {enrollment.student.studentId}
+                          </td>
+                          <td className="px-4 py-2 border border-gray-600">{enrollment.student.fullName}</td>
+                          <td className="px-4 py-2 border border-gray-600 text-gray-400">{enrollment.student.email}</td>
+                          <td className="px-4 py-2 border border-gray-600">
+                            <span className={`px-2 py-1 rounded-full text-xs ${
+                              enrollment.status === 'ACTIVE' 
+                                ? 'bg-green-900/50 text-green-300' 
+                                : 'bg-gray-700 text-gray-300'
+                            }`}>
+                              {enrollment.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end">
+              <button
+                onClick={() => {
+                  setIsViewSubjectOpen(false);
+                  setSelectedSubject(null);
+                  setSubjectEnrollments([]);
+                }}
+                className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Edit Subject Modal */}
+      <Modal
+        isOpen={isEditSubjectOpen}
+        onClose={() => {
+          setIsEditSubjectOpen(false);
+          setSelectedSubject(null);
+        }}
+        title={`Edit Subject - ${selectedSubject?.name || ''}`}
+        size="md"
+      >
+        <form onSubmit={handleUpdateSubject} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1">
+              Subject Name *
+            </label>
+            <input
+              type="text"
+              value={subjectForm.name}
+              onChange={(e) => setSubjectForm({ ...subjectForm, name: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-600 rounded-md bg-[#1e1e26] text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              placeholder="e.g., Data Structures"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1">
+              Subject Code *
+            </label>
+            <input
+              type="text"
+              value={subjectForm.code}
+              onChange={(e) => setSubjectForm({ ...subjectForm, code: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-600 rounded-md bg-[#1e1e26] text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              placeholder="e.g., CS102"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1">
+                Credit Hours
+              </label>
+              <input
+                type="number"
+                value={subjectForm.creditHours}
+                onChange={(e) => setSubjectForm({ ...subjectForm, creditHours: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-600 rounded-md bg-[#1e1e26] text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                min="1"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1">
+                Semester
+              </label>
+              <input
+                type="text"
+                value={subjectForm.semester}
+                onChange={(e) => setSubjectForm({ ...subjectForm, semester: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-600 rounded-md bg-[#1e1e26] text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="e.g., 2"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1">
+              Description
+            </label>
+            <textarea
+              value={subjectForm.description}
+              onChange={(e) => setSubjectForm({ ...subjectForm, description: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-600 rounded-md bg-[#1e1e26] text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              placeholder="Subject description..."
+              rows="2"
+            />
+          </div>
+
+          {/* Schedule Section */}
+          <div className="border-t border-gray-600 pt-4">
+            <h4 className="text-lg font-medium text-white mb-3">Class Schedule</h4>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  Day of Week
+                </label>
+                <select
+                  value={subjectForm.dayOfWeek}
+                  onChange={(e) => setSubjectForm({ ...subjectForm, dayOfWeek: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-600 rounded-md bg-[#1e1e26] text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                >
+                  <option value="">Select Day</option>
+                  <option value="MONDAY">Monday</option>
+                  <option value="TUESDAY">Tuesday</option>
+                  <option value="WEDNESDAY">Wednesday</option>
+                  <option value="THURSDAY">Thursday</option>
+                  <option value="FRIDAY">Friday</option>
+                  <option value="SATURDAY">Saturday</option>
+                  <option value="SUNDAY">Sunday</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  Classroom
+                </label>
+                <input
+                  type="text"
+                  value={subjectForm.classroom}
+                  onChange={(e) => setSubjectForm({ ...subjectForm, classroom: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-600 rounded-md bg-[#1e1e26] text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  placeholder="e.g., Room A101"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 mt-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  Start Time
+                </label>
+                <input
+                  type="time"
+                  value={subjectForm.startTime}
+                  onChange={(e) => setSubjectForm({ ...subjectForm, startTime: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-600 rounded-md bg-[#1e1e26] text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  End Time
+                </label>
+                <input
+                  type="time"
+                  value={subjectForm.endTime}
+                  onChange={(e) => setSubjectForm({ ...subjectForm, endTime: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-600 rounded-md bg-[#1e1e26] text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex gap-2 justify-end">
+            <button
+              type="button"
+              onClick={() => {
+                setIsEditSubjectOpen(false);
+                setSelectedSubject(null);
+              }}
+              className="px-4 py-2 text-gray-300 border border-gray-600 rounded-lg hover:border-gray-500 transition"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition"
+            >
+              Update Subject
+            </button>
+          </div>
+        </form>
       </Modal>
     </div>
   );

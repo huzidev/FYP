@@ -79,7 +79,13 @@ model Subject {
   enrollments     Enrollment[]
   department      Department       @relation(fields: [departmentId], references: [id])
   teacherSubjects TeacherSubject[]
-  ratePerCrHr Float  @default(0)
+  ratePerCrHr     Float            @default(0)
+  
+  // Schedule fields
+  dayOfWeek       DayOfWeek?
+  startTime       String?
+  endTime         String?
+  classroom       String?
 
   @@map("subjects")
 }
@@ -338,4 +344,14 @@ enum UserType {
   ADMIN
   STAFF
   STUDENT
+}
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
 }

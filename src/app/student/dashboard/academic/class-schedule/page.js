@@ -11,17 +11,6 @@ export default function ClassSchedule() {
 
   const router = useRouter();
 
-  // Hardcoded schedule for all courses
-  const fixedSchedule = {
-    MATH101: { day: "Monday", time: "09:00 AM - 10:30 AM", room: "A101" },
-    PHY101: { day: "Monday", time: "11:00 AM - 12:30 PM", room: "B202" },
-    CHEM101: { day: "Tuesday", time: "09:00 AM - 10:30 AM", room: "C303" },
-    ENG101: { day: "Wednesday", time: "02:00 PM - 03:30 PM", room: "D404" },
-    CS101: { day: "Thursday", time: "10:00 AM - 11:30 AM", room: "E505" },
-    HIST101: { day: "Friday", time: "01:00 PM - 02:30 PM", room: "F606" },
-    DEFAULT: { day: "Friday", time: "03:00 PM - 04:30 PM", room: "T101" }, // fallback
-  };
-
   // Fetch current user
   useEffect(() => {
     const loadUser = async () => {
@@ -60,6 +49,27 @@ export default function ClassSchedule() {
     }
   };
 
+  // Helper function to format day name
+  const formatDay = (dayOfWeek) => {
+    if (!dayOfWeek) return 'TBA';
+    return dayOfWeek.charAt(0) + dayOfWeek.slice(1).toLowerCase();
+  };
+
+  // Helper function to format time
+  const formatTime = (startTime, endTime) => {
+    if (!startTime || !endTime) return 'TBA';
+    
+    const formatTimeString = (timeStr) => {
+      const [hours, minutes] = timeStr.split(':');
+      const hour = parseInt(hours);
+      const ampm = hour >= 12 ? 'PM' : 'AM';
+      const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+      return `${displayHour}:${minutes} ${ampm}`;
+    };
+    
+    return `${formatTimeString(startTime)} - ${formatTimeString(endTime)}`;
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center text-white">
@@ -92,28 +102,27 @@ export default function ClassSchedule() {
             </thead>
             <tbody>
               {enrolledCourses.map((enrollment, idx) => {
-                const code = enrollment.subject.code;
-                const schedule = fixedSchedule[code] || fixedSchedule.DEFAULT;
-
+                const subject = enrollment.subject;
+                
                 return (
                   <tr
                     key={enrollment.id}
                     className={idx % 2 === 0 ? "bg-[#2f2f41]" : "bg-[#262634]"}
                   >
                     <td className="py-3 px-6 text-white font-semibold">
-                      {code}
+                      {subject.code}
                     </td>
                     <td className="py-3 px-6 text-white">
-                      {enrollment.subject.name}
+                      {subject.name}
                     </td>
                     <td className="py-3 px-6 text-gray-400 font-medium">
-                      {schedule.day}
+                      {formatDay(subject.dayOfWeek)}
                     </td>
                     <td className="py-3 px-6 text-gray-400 font-medium">
-                      {schedule.time}
+                      {formatTime(subject.startTime, subject.endTime)}
                     </td>
                     <td className="py-3 px-6 text-gray-400 font-medium">
-                      {schedule.room}
+                      {subject.classroom || 'TBA'}
                     </td>
                   </tr>
                 );

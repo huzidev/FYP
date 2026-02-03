@@ -41,6 +41,10 @@ export async function GET(request) {
             code: true,
             creditHours: true,
             semester: true,
+            dayOfWeek: true,
+            startTime: true,
+            endTime: true,
+            classroom: true,
           },
         },
         teacher: {
