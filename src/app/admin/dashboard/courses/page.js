@@ -203,7 +203,9 @@ export default function CoursesPage() {
 
       await Promise.all(enrollPromises);
       toast.success(`${student.fullName} enrolled successfully!`);
-      fetchDeptDetails(selectedDept.id);
+      await fetchDeptDetails(selectedDept.id);
+      // Also refresh available students list
+      await fetchAvailableData();
     } catch (err) {
       toast.error(err.message || "Failed to enroll student");
     } finally {
@@ -243,7 +245,9 @@ export default function CoursesPage() {
 
       await Promise.all(deletePromises);
       toast.success(`${student.fullName} unenrolled successfully!`);
-      fetchDeptDetails(selectedDept.id);
+      await fetchDeptDetails(selectedDept.id);
+      // Also refresh available students list
+      await fetchAvailableData();
     } catch (err) {
       toast.error(err.message || "Failed to unenroll student");
     } finally {
