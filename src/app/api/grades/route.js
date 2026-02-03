@@ -6,6 +6,7 @@ import { calculateGradeDetails } from '@/lib/gradeUtils';
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
+    const enrollmentId = searchParams.get('enrollmentId');
     const studentId = searchParams.get('studentId');
     const subjectId = searchParams.get('subjectId');
     const teacherId = searchParams.get('teacherId');
@@ -16,15 +17,19 @@ export async function GET(request) {
 
     const skip = (page - 1) * limit;
 
-    const where = {
-      enrollment: {
+    let where = {};
+    
+    if (enrollmentId) {
+      where.enrollmentId = parseInt(enrollmentId);
+    } else {
+      where.enrollment = {
         ...(studentId && { studentId: parseInt(studentId) }),
         ...(subjectId && { subjectId: parseInt(subjectId) }),
         ...(teacherId && { teacherId: parseInt(teacherId) }),
         ...(semester && { semester }),
         ...(academicYear && { academicYear }),
-      },
-    };
+      };
+    }
 
     const [grades, total] = await Promise.all([
       prisma.grade.findMany({
@@ -65,6 +70,7 @@ export async function GET(request) {
       prisma.grade.count({ where }),
     ]);
 
+    // No need for compatibility processing since database now has the new structure
     return NextResponse.json({
       success: true,
       data: grades,
@@ -84,16 +90,39 @@ export async function GET(request) {
   }
 }
 
-// POST /api/grades - Create a new grade
+// POST /api/grades - Create or update a grade with detailed marks
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { enrollmentId, marks, totalMarks = 100, examType, remarks } = body;
+    const {
+      enrollmentId,
+      classParticipation = 0,
+      midTerm = 0,
+      project = 0,
+      finalTerm = 0,
+      assignment = 0,
+      quiz = 0,
+      semester,
+      remarks
+    } = body;
 
     // Validation
-    if (!enrollmentId || marks === undefined) {
+    if (!enrollmentId) {
       return NextResponse.json(
-        { success: false, error: 'Enrollment ID and marks are required' },
+        { success: false, error: 'Enrollment ID is required' },
+        { status: 400 }
+      );
+    }
+
+    // Validate individual marks
+    if (classParticipation < 0 || classParticipation > 5 ||
+        midTerm < 0 || midTerm > 20 ||
+        project < 0 || project > 15 ||
+        finalTerm < 0 || finalTerm > 40 ||
+        assignment < 0 || assignment > 10 ||
+        quiz < 0 || quiz > 10) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid marks. Please check the limits for each component.' },
         { status: 400 }
       );
     }
@@ -101,10 +130,6 @@ export async function POST(request) {
     // Check if enrollment exists
     const enrollment = await prisma.enrollment.findUnique({
       where: { id: parseInt(enrollmentId) },
-      include: {
-        subject: { select: { creditHours: true } },
-        grade: true,
-      },
     });
 
     if (!enrollment) {
@@ -114,73 +139,135 @@ export async function POST(request) {
       );
     }
 
+    // Calculate total obtained marks and derived values
+    const obtainedMarks = classParticipation + midTerm + project + finalTerm + assignment + quiz;
+    const percentage = (obtainedMarks / 100) * 100;
+    
+    // Calculate letter grade and GPA
+    let letterGrade = 'F';
+    let gpa = 0.0;
+    
+    if (percentage >= 90) {
+      letterGrade = 'A+';
+      gpa = 4.0;
+    } else if (percentage >= 85) {
+      letterGrade = 'A';
+      gpa = 3.7;
+    } else if (percentage >= 80) {
+      letterGrade = 'A-';
+      gpa = 3.3;
+    } else if (percentage >= 75) {
+      letterGrade = 'B+';
+      gpa = 3.0;
+    } else if (percentage >= 70) {
+      letterGrade = 'B';
+      gpa = 2.7;
+    } else if (percentage >= 65) {
+      letterGrade = 'B-';
+      gpa = 2.3;
+    } else if (percentage >= 60) {
+      letterGrade = 'C+';
+      gpa = 2.0;
+    } else if (percentage >= 55) {
+      letterGrade = 'C';
+      gpa = 1.7;
+    } else if (percentage >= 50) {
+      letterGrade = 'C-';
+      gpa = 1.3;
+    } else if (percentage >= 45) {
+      letterGrade = 'D';
+      gpa = 1.0;
+    }
+
     // Check if grade already exists
-    if (enrollment.grade) {
-      return NextResponse.json(
-        { success: false, error: 'Grade already exists for this enrollment. Use PUT to update.' },
-        { status: 400 }
-      );
-    }
+    const existingGrade = await prisma.grade.findUnique({
+      where: { enrollmentId: parseInt(enrollmentId) },
+    });
 
-    // Validate marks
-    if (marks < 0 || marks > totalMarks) {
-      return NextResponse.json(
-        { success: false, error: `Marks must be between 0 and ${totalMarks}` },
-        { status: 400 }
-      );
-    }
+    // Use the new database structure
+    const gradeData = {
+      enrollmentId: parseInt(enrollmentId),
+      classParticipation: parseFloat(classParticipation),
+      midTerm: parseFloat(midTerm),
+      project: parseFloat(project),
+      finalTerm: parseFloat(finalTerm),
+      assignment: parseFloat(assignment),
+      quiz: parseFloat(quiz),
+      obtainedMarks: parseFloat(obtainedMarks),
+      percentage: parseFloat(percentage),
+      letterGrade,
+      gpa: parseFloat(gpa),
+      semester: semester || enrollment.semester,
+      remarks,
+      isComplete: true,
+    };
 
-    // Calculate grade details
-    const gradeDetails = calculateGradeDetails(marks, totalMarks);
-
-    // Create grade
-    const grade = await prisma.grade.create({
-      data: {
-        enrollmentId: parseInt(enrollmentId),
-        marks: parseFloat(marks),
-        totalMarks: parseFloat(totalMarks),
-        percentage: gradeDetails.percentage,
-        letterGrade: gradeDetails.letterGrade,
-        gpa: gradeDetails.gpa,
-        semester: enrollment.semester,
-        examType: examType || 'FINAL',
-        remarks,
-      },
-      include: {
-        enrollment: {
-          include: {
-            student: {
-              select: {
-                id: true,
-                fullName: true,
-                studentId: true,
+    let grade;
+    if (existingGrade) {
+      grade = await prisma.grade.update({
+        where: { enrollmentId: parseInt(enrollmentId) },
+        data: gradeData,
+        include: {
+          enrollment: {
+            include: {
+              subject: {
+                select: {
+                  id: true,
+                  name: true,
+                  code: true,
+                  creditHours: true,
+                },
               },
-            },
-            subject: {
-              select: {
-                id: true,
-                name: true,
-                code: true,
-                creditHours: true,
+              student: {
+                select: {
+                  id: true,
+                  fullName: true,
+                  studentId: true,
+                },
               },
             },
           },
         },
-      },
-    });
+      });
+    } else {
+      grade = await prisma.grade.create({
+        data: gradeData,
+        include: {
+          enrollment: {
+            include: {
+              subject: {
+                select: {
+                  id: true,
+                  name: true,
+                  code: true,
+                  creditHours: true,
+                },
+              },
+              student: {
+                select: {
+                  id: true,
+                  fullName: true,
+                  studentId: true,
+                },
+              },
+            },
+          },
+        },
+      });
+    }
 
     return NextResponse.json(
       {
         success: true,
-        message: 'Grade created successfully',
+        message: 'Grade saved successfully',
         data: grade,
       },
-      { status: 201 }
+      { status: existingGrade ? 200 : 201 }
     );
   } catch (error) {
-    console.error('Error creating grade:', error);
+    console.error('Error saving grade:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to create grade' },
+      { success: false, error: 'Failed to save grade' },
       { status: 500 }
     );
   }

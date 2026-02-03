@@ -61,7 +61,7 @@ export async function GET(request) {
             capacity: true,
           },
         },
-        grade: true,
+        // grade: true, // Temporarily commented out until migration is run
       },
       orderBy: { createdAt: "desc" },
     });
