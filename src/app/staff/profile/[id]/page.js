@@ -81,7 +81,7 @@ export default function StaffProfilePage() {
   return (
     <div className="min-h-screen bg-[#1d1d24]">
       <Header />
-      <div className="container mx-auto px-6 py-8">
+      <div className="container mx-auto px-6 py-8 mt-16">
         <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-3xl font-bold text-white mb-2">Staff Profile</h1>

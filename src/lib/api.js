@@ -3,6 +3,8 @@
  * Handles GET, POST, PUT, DELETE operations with consistent error handling
  */
 
+import { loadingEvents } from './loadingEvents';
+
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
 
 /**
@@ -144,6 +146,9 @@ export const ApiResponse = {
  * Base fetch function with error handling
  */
 async function baseFetch(url, options = {}) {
+  // Start global loading
+  loadingEvents.startLoading();
+
   try {
     const config = {
       headers: {
@@ -154,10 +159,10 @@ async function baseFetch(url, options = {}) {
     };
 
     const response = await fetch(`${BASE_URL}${url}`, config);
-    
+
     let data;
     const contentType = response.headers.get('content-type');
-    
+
     if (contentType && contentType.includes('application/json')) {
       data = await response.json();
     } else {
@@ -181,13 +186,16 @@ async function baseFetch(url, options = {}) {
     if (error instanceof ApiError) {
       throw error;
     }
-    
+
     // Network or other errors
     throw new ApiError(
       error.message || 'Network error occurred',
       0,
       null
     );
+  } finally {
+    // Stop global loading
+    loadingEvents.stopLoading();
   }
 }
 
@@ -268,6 +276,9 @@ export const api = {
    * @param {Object} options - Additional fetch options
    */
   async upload(url, formData, options = {}) {
+    // Start global loading
+    loadingEvents.startLoading();
+
     try {
       // Don't use baseFetch - it sets Content-Type: application/json which breaks FormData
       // Browser must set Content-Type automatically with proper multipart boundary
@@ -297,6 +308,9 @@ export const api = {
     } catch (error) {
       if (error instanceof ApiError) throw error;
       throw new ApiError(error.message || 'Upload failed', 0, null);
+    } finally {
+      // Stop global loading
+      loadingEvents.stopLoading();
     }
   },
 };

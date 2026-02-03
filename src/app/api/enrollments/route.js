@@ -109,6 +109,17 @@ export async function POST(request) {
       );
     }
 
+    // If teacherSubjectId is provided, get the teacherId from it
+    let resolvedTeacherId = teacherId ? parseInt(teacherId) : null;
+    if (teacherSubjectId && !resolvedTeacherId) {
+      const teacherSubject = await prisma.teacherSubject.findUnique({
+        where: { id: parseInt(teacherSubjectId) },
+      });
+      if (teacherSubject) {
+        resolvedTeacherId = teacherSubject.teacherId;
+      }
+    }
+
     const enrollment = await prisma.enrollment.create({
       data: {
         studentId: parseInt(studentId),
