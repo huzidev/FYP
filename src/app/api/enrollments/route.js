@@ -83,12 +83,18 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { studentId, subjectId, semester, academicYear } = body;
+    const {
+      studentId,
+      subjectId,
+      teacherId,
+      teacherSubjectId,
+      semester,
+      academicYear,
+    } = body;
 
-    // Only studentId and subjectId are required
-    if (!studentId || !subjectId) {
+    if (!studentId || !subjectId || !teacherSubjectId) {
       return NextResponse.json(
-        { success: false, error: "Student ID and Subject ID are required" },
+        { success: false, error: "Missing required fields" },
         { status: 400 },
       );
     }
@@ -96,38 +102,45 @@ export async function POST(request) {
     const existing = await prisma.enrollment.findFirst({
       where: {
         studentId: parseInt(studentId),
-        subjectId: parseInt(subjectId),
-        semester: semester || null,
-        academicYear: academicYear || null,
+        teacherSubjectId: parseInt(teacherSubjectId),
       },
     });
 
     if (existing) {
       return NextResponse.json(
-        { success: false, error: "Already enrolled in this course" },
+        { success: false, error: "Already enrolled" },
         { status: 409 },
       );
+    }
+
+    // If teacherSubjectId is provided, get the teacherId from it
+    let resolvedTeacherId = teacherId ? parseInt(teacherId) : null;
+    if (teacherSubjectId && !resolvedTeacherId) {
+      const teacherSubject = await prisma.teacherSubject.findUnique({
+        where: { id: parseInt(teacherSubjectId) },
+      });
+      if (teacherSubject) {
+        resolvedTeacherId = teacherSubject.teacherId;
+      }
     }
 
     const enrollment = await prisma.enrollment.create({
       data: {
         studentId: parseInt(studentId),
         subjectId: parseInt(subjectId),
-        semester: semester || null,
-        academicYear: academicYear || null,
+        teacherId: parseInt(teacherId),
+        teacherSubjectId: parseInt(teacherSubjectId),
+        semester,
+        academicYear,
         status: "ACTIVE",
       },
     });
 
-    return NextResponse.json({
-      success: true,
-      message: "Enrollment created successfully",
-      data: enrollment,
-    });
+    return NextResponse.json({ success: true, data: enrollment });
   } catch (error) {
-    console.error("Enrollment creation failed:", error);
+    console.error(error);
     return NextResponse.json(
-      { success: false, error: "Failed to create enrollment" },
+      { success: false, error: "Enrollment failed" },
       { status: 500 },
     );
   }

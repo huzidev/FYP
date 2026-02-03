@@ -1,9 +1,11 @@
 "use client";
 
 import { ApiError, StaffService, StudentService } from "@/lib/api";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 export default function AdminDashboard() {
+  const router = useRouter();
   const [stats, setStats] = useState({
     totalStudents: 0,
     activeStudents: 0,
@@ -83,36 +85,42 @@ export default function AdminDashboard() {
       value: stats.totalStudents,
       bgColor: "bg-blue-600",
       icon: "👥",
+      href: "/admin/dashboard/students",
     },
     {
       title: "Active Students",
       value: stats.activeStudents,
       bgColor: "bg-green-600",
       icon: "✅",
+      href: "/admin/dashboard/students",
     },
     {
       title: "Inactive Students",
       value: stats.inactiveStudents,
       bgColor: "bg-red-600",
       icon: "❌",
+      href: "/admin/dashboard/students",
     },
     {
       title: "Total Staff",
       value: stats.totalStaff,
       bgColor: "bg-purple-600",
       icon: "👨‍💼",
+      href: "/admin/dashboard/staff",
     },
     {
       title: "Admission Staff",
       value: stats.admissionStaff,
       bgColor: "bg-yellow-600",
       icon: "📋",
+      href: "/admin/dashboard/staff",
     },
     {
       title: "Teachers",
       value: stats.teachers,
       bgColor: "bg-indigo-600",
       icon: "👨‍🏫",
+      href: "/admin/dashboard/staff",
     },
   ];
 
@@ -127,7 +135,8 @@ export default function AdminDashboard() {
         {statCards.map((card, index) => (
           <div
             key={index}
-            className={`${card.bgColor} rounded-xl p-6 text-white shadow-lg hover:shadow-xl transition-shadow`}
+            onClick={() => card.href && router.push(card.href)}
+            className={`${card.bgColor} rounded-xl p-6 text-white shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all cursor-pointer`}
           >
             <div className="flex items-center justify-between">
               <div>

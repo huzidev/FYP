@@ -63,12 +63,12 @@ export default function AdminProfilePage() {
     }
   };
 
+  const isOwnProfile = currentUser && admin && admin.id === currentUser.id;
+
   const canEdit = () => {
     if (!currentUser || !admin) return false;
-    // Super admin can't be edited
-    if (admin.role === "SUPER_ADMIN") return false;
-    // Current user can't edit themselves (they should view profile)
-    if (admin.id === currentUser.id) return false;
+    // Super admin can't be edited by others
+    if (admin.role === "SUPER_ADMIN" && !isOwnProfile) return false;
     // Admin can edit other admins but not super admins
     return currentUser.role === "SUPER_ADMIN" || currentUser.role === "ADMIN";
   };
@@ -92,14 +92,15 @@ export default function AdminProfilePage() {
   return (
     <div className="min-h-screen bg-[#1d1d24]">
       <Header />
-      <div className="container mx-auto px-6 py-8">
+      <div className="container mx-auto px-6 py-8 mt-16">
         <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-3xl font-bold text-white mb-2">Admin Profile</h1>
             <p className="text-gray-400">{admin.fullName}</p>
           </div>
           <div className="flex gap-3">
-            {canEdit() && (
+            {/* Show Activate/Deactivate only for other admins, not own profile */}
+            {canEdit() && !isOwnProfile && (
               <button
                 onClick={handleToggleActive}
                 disabled={isUpdating}
@@ -112,12 +113,13 @@ export default function AdminProfilePage() {
                 {isUpdating ? "Updating..." : admin.isActive ? "Deactivate" : "Activate"}
               </button>
             )}
+            {/* Show Edit button - different text for own profile */}
             {canEdit() && (
               <button
                 onClick={() => router.push(`/admins/edit/${admin.id}`)}
                 className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition"
               >
-                Edit
+                {isOwnProfile ? "Edit My Profile" : "Edit"}
               </button>
             )}
           </div>

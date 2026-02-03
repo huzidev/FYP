@@ -79,8 +79,38 @@ export default function CoursesPage() {
       }
 
       setDeptDetails(dept);
-      setStudents(dept.students || []);
       setSubjects(dept.subjects || []);
+
+      // Fetch enrolled students based on enrollments in department subjects
+      const deptSubjects = dept.subjects || [];
+      if (deptSubjects.length > 0) {
+        // Get all enrollments for department subjects
+        const enrollmentPromises = deptSubjects.map(subject =>
+          EnrollmentService.getAll({ subjectId: subject.id })
+        );
+        const enrollmentResults = await Promise.all(enrollmentPromises);
+
+        // Extract unique students from enrollments
+        const studentMap = new Map();
+        enrollmentResults.forEach(result => {
+          const enrollments = result.data?.data || [];
+          enrollments.forEach(enrollment => {
+            if (enrollment.student && !studentMap.has(enrollment.student.id)) {
+              studentMap.set(enrollment.student.id, {
+                id: enrollment.student.id,
+                fullName: enrollment.student.fullName,
+                studentId: enrollment.student.studentId,
+                email: enrollment.student.email,
+                level: dept.level, // Use department level
+              });
+            }
+          });
+        });
+
+        setStudents(Array.from(studentMap.values()));
+      } else {
+        setStudents([]);
+      }
     } catch (err) {
       console.error("Error fetching department details:", err);
       toast.error("Failed to fetch department details");
@@ -197,7 +227,9 @@ export default function CoursesPage() {
 
       await Promise.all(enrollPromises);
       toast.success(`${student.fullName} enrolled successfully!`);
-      fetchDeptDetails(selectedDept.id);
+      await fetchDeptDetails(selectedDept.id);
+      // Also refresh available students list
+      await fetchAvailableData();
     } catch (err) {
       toast.error(err.message || "Failed to enroll student");
     } finally {
@@ -237,7 +269,9 @@ export default function CoursesPage() {
 
       await Promise.all(deletePromises);
       toast.success(`${student.fullName} unenrolled successfully!`);
-      fetchDeptDetails(selectedDept.id);
+      await fetchDeptDetails(selectedDept.id);
+      // Also refresh available students list
+      await fetchAvailableData();
     } catch (err) {
       toast.error(err.message || "Failed to unenroll student");
     } finally {

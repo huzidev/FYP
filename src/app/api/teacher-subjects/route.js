@@ -27,6 +27,7 @@ export async function GET(request) {
           select: {
             id: true,
             fullName: true,
+            staffId: true,
           },
         },
         subject: {
@@ -43,22 +44,25 @@ export async function GET(request) {
             },
           },
         },
-        _count: {
-          select: {
-            enrollments: true,
-          },
-        },
       },
       orderBy: { createdAt: "desc" },
     });
 
-    // Add enrollment count and available spots
-    const result = teacherSubjects.map((ts) => ({
-      ...ts,
-      enrolledCount: ts._count.enrollments,
-      availableSpots: ts.capacity - ts._count.enrollments,
-      isFull: ts._count.enrollments >= ts.capacity,
-    }));
+    // Get enrollment counts by subjectId (not teacherSubjectId)
+    // because enrollments from courses page don't have teacherSubjectId
+    const result = await Promise.all(
+      teacherSubjects.map(async (ts) => {
+        const enrolledCount = await prisma.enrollment.count({
+          where: { subjectId: ts.subjectId },
+        });
+        return {
+          ...ts,
+          enrolledCount,
+          availableSpots: ts.capacity - enrolledCount,
+          isFull: enrolledCount >= ts.capacity,
+        };
+      })
+    );
 
     return NextResponse.json({
       success: true,
