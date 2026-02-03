@@ -11,12 +11,6 @@ export default function LogoSection() {
         height={60}
         className="hidden sm:block"
       />
-
-      {/* <Link href="/">
-        <h1 className="text-white cursor-pointer font-extrabold text-2xl">
-          SmiConnect
-        </h1>
-      </Link> */}
     </div>
   );
 }
