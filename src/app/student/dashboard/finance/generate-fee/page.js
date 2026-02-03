@@ -11,6 +11,7 @@ export default function GenerateFee() {
   const [student, setStudent] = useState(null);
   const [voucher, setVoucher] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [courseCount, setCourseCount] = useState(1); // New State for dropdown
   const router = useRouter();
 
   useEffect(() => {
@@ -48,6 +49,7 @@ export default function GenerateFee() {
           studentId: student.id,
           semester: "Fall 2025",
           academicYear: "2025-2026",
+          courseCount: courseCount, // Sending selected courses to API
         }),
       });
 
@@ -65,10 +67,8 @@ export default function GenerateFee() {
 
   const goToInstallment = () => {
     if (!voucher) return toast.error("No voucher found");
-
-    // Store voucher in sessionStorage to pass to Installment page
     sessionStorage.setItem("lastVoucher", JSON.stringify(voucher));
-    router.push("/student/dashboard/finance/installment"); // Update path to your Installment page
+    router.push("/student/dashboard/finance/installment");
   };
 
   const downloadPDF = async () => {
@@ -119,16 +119,32 @@ export default function GenerateFee() {
       </h1>
 
       <div className="flex gap-4 items-center mb-8 print:hidden">
+        {/* Course Selection Dropdown */}
+        <div className="flex flex-col">
+          <label className="text-white text-sm mb-1">No. of Courses</label>
+          <select
+            value={courseCount}
+            onChange={(e) => setCourseCount(parseInt(e.target.value))}
+            className="bg-gray-800 text-white border border-gray-600 rounded px-3 py-2 outline-none focus:border-blue-500"
+          >
+            {[1, 2, 3, 4, 5, 6].map((num) => (
+              <option key={num} value={num}>
+                {num} Course{num > 1 ? "s" : ""}
+              </option>
+            ))}
+          </select>
+        </div>
+
         <button
           onClick={generateVoucher}
           disabled={loading}
-          className="bg-blue-600 text-white px-5 py-2 rounded disabled:opacity-50"
+          className="bg-blue-600 text-white px-5 py-2 mt-6 rounded disabled:opacity-50"
         >
           {loading ? "Generating..." : "Generate"}
         </button>
 
         {voucher && (
-          <>
+          <div className="flex gap-4 mt-6">
             <button
               onClick={downloadPDF}
               className="bg-green-600 text-white px-5 py-2 rounded"
@@ -142,7 +158,7 @@ export default function GenerateFee() {
             >
               Installment of Fee Voucher
             </button>
-          </>
+          </div>
         )}
       </div>
 
