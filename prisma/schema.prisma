@@ -272,7 +272,11 @@ model FeeVoucher {
   academicYear String
   validTill DateTime
   items VoucherItem[]
-  student     Student   @relation(fields: [studentId], references: [id]) 
+  student     Student   @relation(fields: [studentId], references: [id])
+  isInstallment Boolean  @default(false)
+  parentVoucherId Int?
+  parentVoucher   FeeVoucher? @relation("Installments", fields: [parentVoucherId], references: [id])
+  installments    FeeVoucher[] @relation("Installments")
 }
 
 model VoucherItem {

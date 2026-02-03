@@ -39,15 +39,7 @@ export async function GET(request) {
               code: true,
             },
           },
-          vouchers: {
-            select: {
-              id: true,
-              totalAmount: true,
-              paidAmount: true,
-              status: true,
-              dueDate: true,
-            },
-          },
+          
 
           enrollments: {
             select: {
