@@ -130,19 +130,33 @@ model Enrollment {
 }
 
 model Grade {
-  id           Int        @id @default(autoincrement())
-  enrollmentId Int        @unique
-  marks        Float?
-  totalMarks   Float      @default(100)
-  percentage   Float?
-  letterGrade  String?
-  gpa          Float?
-  semester     String?
-  examType     String?
-  remarks      String?
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-  enrollment   Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  id                  Int        @id @default(autoincrement())
+  enrollmentId        Int        @unique
+  
+  // Detailed marks breakdown
+  classParticipation  Float?     @default(0)  // 5 marks
+  midTerm            Float?     @default(0)  // 20 marks  
+  project            Float?     @default(0)  // 15 marks
+  finalTerm          Float?     @default(0)  // 40 marks
+  assignment         Float?     @default(0)  // 10 marks
+  quiz               Float?     @default(0)  // 10 marks
+  
+  // Calculated fields
+  totalMarks         Float      @default(100)
+  obtainedMarks      Float?     // Sum of all components
+  percentage         Float?
+  letterGrade        String?
+  gpa                Float?
+  
+  // Additional info
+  semester           String?
+  examType           String?
+  remarks            String?
+  isComplete         Boolean    @default(false)  // If all marks are entered
+  
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+  enrollment         Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
 
   @@map("grades")
 }

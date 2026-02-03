@@ -14,7 +14,17 @@ export default function CourseDetailPage() {
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [editingGrades, setEditingGrades] = useState(false);
-  const [gradeInputs, setGradeInputs] = useState({});
+  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [gradeForm, setGradeForm] = useState({
+    classParticipation: 0,
+    midTerm: 0,
+    project: 0,
+    finalTerm: 0,
+    assignment: 0,
+    quiz: 0,
+    remarks: ''
+  });
   const [savingGrades, setSavingGrades] = useState(false);
   const [saveMessage, setSaveMessage] = useState(null);
 
@@ -34,19 +44,6 @@ export default function CourseDetailPage() {
 
       if (data.success) {
         setCourseData(data.data);
-        // Initialize grade inputs with existing grades
-        const initialGrades = {};
-        data.data.enrollments?.forEach((enrollment) => {
-          if (enrollment.grade) {
-            initialGrades[enrollment.id] = {
-              marks: enrollment.grade.marks?.toString() || "",
-              totalMarks: enrollment.grade.totalMarks?.toString() || "100",
-            };
-          } else {
-            initialGrades[enrollment.id] = { marks: "", totalMarks: "100" };
-          }
-        });
-        setGradeInputs(initialGrades);
       } else {
         setError(data.error || "Failed to fetch course details");
       }
@@ -58,62 +55,88 @@ export default function CourseDetailPage() {
     }
   };
 
-  const handleGradeChange = (enrollmentId, field, value) => {
-    setGradeInputs((prev) => ({
+  // Handle edit grade button click
+  const handleEditGrade = (enrollment) => {
+    setSelectedStudent(enrollment);
+    
+    // Pre-populate form with existing grades if available
+    if (enrollment.grade) {
+      setGradeForm({
+        classParticipation: enrollment.grade.classParticipation || 0,
+        midTerm: enrollment.grade.midTerm || 0,
+        project: enrollment.grade.project || 0,
+        finalTerm: enrollment.grade.finalTerm || 0,
+        assignment: enrollment.grade.assignment || 0,
+        quiz: enrollment.grade.quiz || 0,
+        remarks: enrollment.grade.remarks || ''
+      });
+    } else {
+      setGradeForm({
+        classParticipation: 0,
+        midTerm: 0,
+        project: 0,
+        finalTerm: 0,
+        assignment: 0,
+        quiz: 0,
+        remarks: ''
+      });
+    }
+    
+    setIsEditModalOpen(true);
+  };
+
+  // Handle form input changes
+  const handleGradeChange = (field, value) => {
+    const numValue = parseFloat(value) || 0;
+    setGradeForm(prev => ({
       ...prev,
-      [enrollmentId]: {
-        ...prev[enrollmentId],
-        [field]: value,
-      },
+      [field]: numValue
     }));
   };
 
-  const saveGrades = async () => {
+  // Save individual grade
+  const saveGrade = async () => {
+    if (!selectedStudent) return;
+    
     try {
       setSavingGrades(true);
       setSaveMessage(null);
-
-      // Prepare grades for bulk update
-      const gradesToSave = Object.entries(gradeInputs)
-        .filter(([_, grade]) => grade.marks !== "")
-        .map(([enrollmentId, grade]) => ({
-          enrollmentId: parseInt(enrollmentId),
-          marks: parseFloat(grade.marks),
-          totalMarks: parseFloat(grade.totalMarks) || 100,
-        }));
-
-      if (gradesToSave.length === 0) {
-        setSaveMessage({ type: "error", text: "No grades to save" });
-        return;
-      }
-
-      const response = await fetch("/api/grades/bulk", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ grades: gradesToSave }),
+      
+      const response = await fetch('/api/grades', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          enrollmentId: selectedStudent.id,
+          ...gradeForm,
+          semester: selectedStudent.semester
+        })
       });
-
+      
       const result = await response.json();
-
+      
       if (result.success) {
-        setSaveMessage({
-          type: "success",
-          text: `${result.data.created} created, ${result.data.updated} updated${
-            result.data.failed.length > 0 ? `, ${result.data.failed.length} failed` : ""
-          }`,
-        });
+        setSaveMessage({ type: "success", text: "Grade saved successfully!" });
         // Refresh data
-        fetchCourseDetails();
-        setEditingGrades(false);
+        await fetchCourseDetails();
+        setIsEditModalOpen(false);
+        setSelectedStudent(null);
       } else {
-        setSaveMessage({ type: "error", text: result.error || "Failed to save grades" });
+        setSaveMessage({ type: "error", text: result.error || "Failed to save grade" });
       }
-    } catch (err) {
-      console.error("Error saving grades:", err);
-      setSaveMessage({ type: "error", text: "Failed to save grades" });
+    } catch (error) {
+      console.error('Error saving grade:', error);
+      setSaveMessage({ type: "error", text: "Failed to save grade" });
     } finally {
       setSavingGrades(false);
     }
+  };
+
+  // Calculate total marks for display
+  const calculateTotal = () => {
+    return gradeForm.classParticipation + gradeForm.midTerm + gradeForm.project + 
+           gradeForm.finalTerm + gradeForm.assignment + gradeForm.quiz;
   };
 
   const filteredStudents = courseData?.enrollments?.filter((enrollment) => {
@@ -127,7 +150,7 @@ export default function CourseDetailPage() {
   }) || [];
 
   // Calculate class statistics
-  const gradedCount = courseData?.enrollments?.filter((e) => e.grade)?.length || 0;
+  const gradedCount = courseData?.enrollments?.filter((e) => e.grade?.isComplete)?.length || 0;
   const averageGrade = courseData?.enrollments?.reduce((sum, e) => {
     if (e.grade?.percentage) return sum + e.grade.percentage;
     return sum;
@@ -236,35 +259,6 @@ export default function CourseDetailPage() {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="bg-[#1d1d24] border border-[#35353d] text-white rounded-lg px-4 py-2 focus:outline-none focus:border-indigo-500"
               />
-              {/* Edit/Save Button */}
-              {editingGrades ? (
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => {
-                      setEditingGrades(false);
-                      fetchCourseDetails(); // Reset to saved values
-                    }}
-                    className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition"
-                    disabled={savingGrades}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={saveGrades}
-                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition flex items-center gap-2"
-                    disabled={savingGrades}
-                  >
-                    {savingGrades ? "Saving..." : "Save Grades"}
-                  </button>
-                </div>
-              ) : (
-                <button
-                  onClick={() => setEditingGrades(true)}
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition"
-                >
-                  Enter Grades
-                </button>
-              )}
             </div>
           </div>
         </div>
@@ -287,12 +281,9 @@ export default function CourseDetailPage() {
                   <th className="text-left text-gray-400 font-medium px-6 py-4">Name</th>
                   <th className="text-left text-gray-400 font-medium px-6 py-4">Email</th>
                   <th className="text-left text-gray-400 font-medium px-6 py-4">Status</th>
-                  <th className="text-left text-gray-400 font-medium px-6 py-4 w-48">
-                    {editingGrades ? "Marks / Total" : "Grade"}
-                  </th>
-                  {!editingGrades && (
-                    <th className="text-left text-gray-400 font-medium px-6 py-4">GPA</th>
-                  )}
+                  <th className="text-left text-gray-400 font-medium px-6 py-4">Grade</th>
+                  <th className="text-left text-gray-400 font-medium px-6 py-4">GPA</th>
+                  <th className="text-center text-gray-400 font-medium px-6 py-4">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#35353d]">
@@ -314,54 +305,31 @@ export default function CourseDetailPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      {editingGrades ? (
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="number"
-                            min="0"
-                            max={gradeInputs[enrollment.id]?.totalMarks || 100}
-                            value={gradeInputs[enrollment.id]?.marks || ""}
-                            onChange={(e) => handleGradeChange(enrollment.id, "marks", e.target.value)}
-                            placeholder="Marks"
-                            className="w-20 bg-[#1d1d24] border border-[#35353d] text-white rounded px-2 py-1 focus:outline-none focus:border-indigo-500"
-                          />
-                          <span className="text-gray-400">/</span>
-                          <input
-                            type="number"
-                            min="1"
-                            value={gradeInputs[enrollment.id]?.totalMarks || "100"}
-                            onChange={(e) => handleGradeChange(enrollment.id, "totalMarks", e.target.value)}
-                            className="w-16 bg-[#1d1d24] border border-[#35353d] text-white rounded px-2 py-1 focus:outline-none focus:border-indigo-500"
-                          />
-                        </div>
-                      ) : enrollment.grade ? (
-                        <div className="flex items-center gap-2">
-                          <span className={`font-bold ${
-                            enrollment.grade.letterGrade?.startsWith("A") ? "text-green-400" :
-                            enrollment.grade.letterGrade?.startsWith("B") ? "text-blue-400" :
-                            enrollment.grade.letterGrade?.startsWith("C") ? "text-yellow-400" :
-                            enrollment.grade.letterGrade?.startsWith("D") ? "text-orange-400" :
-                            "text-red-400"
-                          }`}>
-                            {enrollment.grade.letterGrade}
-                          </span>
-                          <span className="text-gray-400 text-sm">
-                            ({enrollment.grade.marks}/{enrollment.grade.totalMarks})
-                          </span>
+                      {enrollment.grade?.isComplete ? (
+                        <div className="text-sm">
+                          <span className="text-white font-medium">{enrollment.grade.obtainedMarks}/100</span>
+                          <span className="text-gray-400 ml-2">({enrollment.grade.percentage?.toFixed(1)}%)</span>
+                          <div className="text-xs text-gray-500">{enrollment.grade.letterGrade}</div>
                         </div>
                       ) : (
                         <span className="text-gray-500">Not graded</span>
                       )}
                     </td>
-                    {!editingGrades && (
-                      <td className="px-6 py-4">
-                        {enrollment.grade ? (
-                          <span className="text-white">{enrollment.grade.gpa?.toFixed(2)}</span>
-                        ) : (
-                          <span className="text-gray-500">-</span>
-                        )}
-                      </td>
-                    )}
+                    <td className="px-6 py-4">
+                      {enrollment.grade?.isComplete ? (
+                        <span className="text-white">{enrollment.grade.gpa?.toFixed(2)}</span>
+                      ) : (
+                        <span className="text-gray-500">-</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <button
+                        onClick={() => handleEditGrade(enrollment)}
+                        className="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white text-sm rounded transition"
+                      >
+                        Edit
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -375,6 +343,194 @@ export default function CourseDetailPage() {
           <span>{gradedCount} of {courseData.enrollments?.length || 0} graded</span>
         </div>
       </div>
+
+      {/* Grade Edit Modal */}
+      {isEditModalOpen && selectedStudent && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#2d2d39] rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-start mb-6">
+                <div>
+                  <h2 className="text-2xl font-bold text-white">Edit Grades</h2>
+                  <p className="text-gray-400">{selectedStudent.student.fullName} ({selectedStudent.student.studentId})</p>
+                </div>
+                <button
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="text-gray-400 hover:text-white"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {saveMessage && (
+                <div className={`p-4 rounded-lg mb-6 ${
+                  saveMessage.type === 'success' 
+                    ? 'bg-green-900/30 border border-green-600 text-green-400'
+                    : 'bg-red-900/30 border border-red-600 text-red-400'
+                }`}>
+                  {saveMessage.text}
+                </div>
+              )}
+
+              <div className="space-y-6">
+                {/* Grade Components */}
+                <div className="bg-[#1e1e26] p-4 rounded-lg">
+                  <h3 className="text-lg font-semibold text-white mb-4">Grade Components</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-1">
+                        Class Participation (5 marks)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="5"
+                        step="0.5"
+                        value={gradeForm.classParticipation}
+                        onChange={(e) => handleGradeChange('classParticipation', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-600 rounded-md bg-[#1e1e26] text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-1">
+                        Mid Term (20 marks)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="20"
+                        step="0.5"
+                        value={gradeForm.midTerm}
+                        onChange={(e) => handleGradeChange('midTerm', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-600 rounded-md bg-[#1e1e26] text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-1">
+                        Project (15 marks)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="15"
+                        step="0.5"
+                        value={gradeForm.project}
+                        onChange={(e) => handleGradeChange('project', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-600 rounded-md bg-[#1e1e26] text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-1">
+                        Final Term (40 marks)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="40"
+                        step="0.5"
+                        value={gradeForm.finalTerm}
+                        onChange={(e) => handleGradeChange('finalTerm', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-600 rounded-md bg-[#1e1e26] text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-1">
+                        Assignment (10 marks)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="10"
+                        step="0.5"
+                        value={gradeForm.assignment}
+                        onChange={(e) => handleGradeChange('assignment', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-600 rounded-md bg-[#1e1e26] text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-1">
+                        Quiz (10 marks)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="10"
+                        step="0.5"
+                        value={gradeForm.quiz}
+                        onChange={(e) => handleGradeChange('quiz', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-600 rounded-md bg-[#1e1e26] text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Total and Preview */}
+                <div className="bg-[#1e1e26] p-4 rounded-lg">
+                  <h3 className="text-lg font-semibold text-white mb-4">Grade Summary</h3>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <p className="text-gray-400 text-sm">Total Marks</p>
+                      <p className="text-2xl font-bold text-white">{calculateTotal()}/100</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-400 text-sm">Percentage</p>
+                      <p className="text-2xl font-bold text-indigo-400">{calculateTotal()}%</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-400 text-sm">Letter Grade</p>
+                      <p className="text-2xl font-bold text-green-400">
+                        {calculateTotal() >= 90 ? 'A+' : 
+                         calculateTotal() >= 85 ? 'A' :
+                         calculateTotal() >= 80 ? 'A-' :
+                         calculateTotal() >= 75 ? 'B+' :
+                         calculateTotal() >= 70 ? 'B' :
+                         calculateTotal() >= 65 ? 'B-' :
+                         calculateTotal() >= 60 ? 'C+' :
+                         calculateTotal() >= 55 ? 'C' :
+                         calculateTotal() >= 50 ? 'C-' :
+                         calculateTotal() >= 45 ? 'D' : 'F'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Remarks */}
+                <div className="bg-[#1e1e26] p-4 rounded-lg">
+                  <label className="block text-sm font-medium text-gray-300 mb-1">
+                    Remarks (Optional)
+                  </label>
+                  <textarea
+                    value={gradeForm.remarks}
+                    onChange={(e) => setGradeForm(prev => ({ ...prev, remarks: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-600 rounded-md bg-[#1e1e26] text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    rows="3"
+                    placeholder="Add any remarks about the student's performance..."
+                  />
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex justify-end gap-4">
+                  <button
+                    onClick={() => setIsEditModalOpen(false)}
+                    className="px-4 py-2 text-gray-300 border border-gray-600 rounded-lg hover:border-gray-500 transition"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={saveGrade}
+                    disabled={savingGrades}
+                    className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition"
+                  >
+                    {savingGrades ? 'Saving...' : 'Save Grade'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
