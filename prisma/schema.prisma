@@ -238,16 +238,17 @@ model Student {
   enrollments    Enrollment[]
   fees           Fee[]
   department    Department   @relation(fields: [departmentId], references: [id])
+  feeVouchers    FeeVoucher[]
 
   @@map("students")
 }
 
 model Particular {
   id Int @id @default(autoincrement())
-  name String
+  name String @unique
 
   departmentFees DepartmentFee[]  // ← added
-  voucherItems VoucherItem[] 
+  voucherItems VoucherItem[]
 }
 
 model DepartmentFee {
@@ -262,15 +263,16 @@ model DepartmentFee {
 model FeeVoucher {
   id Int @id @default(autoincrement())
   challanNo String @unique
-  bill1Id String @unique
+  bill1Id String
   totalAmount Float
   arrears Float
   status FeeStatus @default(PENDING)
   studentId Int
   semester String   // <-- add this
   academicYear String
-  validTill DateTime 
+  validTill DateTime
   items VoucherItem[]
+  student     Student   @relation(fields: [studentId], references: [id]) 
 }
 
 model VoucherItem {

@@ -68,3 +68,14 @@ body {
   0%   { background-position: 0% 0%; }
   100% { background-position: 200% 0%; }
 }
+@media print {
+  body {
+    background: white;
+  }
+
+  button,
+  input {
+    display: none;
+  }
+}
+

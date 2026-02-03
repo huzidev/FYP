@@ -1,114 +1,107 @@
-import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+
+const addDays = (date, days) => {
+  const d = new Date(date);
+  d.setDate(d.getDate() + days);
+  return d;
+};
 
 export async function POST(req) {
   try {
     const { studentId, semester, academicYear } = await req.json();
 
-    const student = await prisma.student.findUnique({
-      where: { id: studentId },
-      include: {
-        enrollments: {
-          where: { semester, academicYear },
-          include: { subject: true }, // subject includes ratePerCrHr
-        },
-        department: true,
-      },
-    });
-
-    if (!student) {
+    if (!studentId) {
       return NextResponse.json(
-        { message: "Student not found" },
-        { status: 404 },
+        { message: "Student ID is required" },
+        { status: 400 },
       );
     }
 
-    /* ---- Tuition Fee Calculation ---- */
-    let tuitionTotal = 0;
-    for (const enroll of student.enrollments) {
-      tuitionTotal += enroll.subject.ratePerCrHr * enroll.subject.creditHours;
-    }
-
-    /* ---- Department Fixed Fees ---- */
-    const deptFees = await prisma.departmentFee.findMany({
-      where: { departmentId: student.departmentId },
-      include: { particular: true },
+    // 1️⃣ Validate student
+    const student = await prisma.student.findUnique({
+      where: { id: studentId },
+      include: { enrollments: true, department: true },
     });
 
-    let fixedTotal = deptFees.reduce((sum, f) => sum + f.amount, 0);
+    if (!student)
+      return NextResponse.json(
+        { message: "Invalid Student ID" },
+        { status: 400 },
+      );
 
-    /* ---- Arrears ---- */
-    const unpaid = await prisma.feeVoucher.aggregate({
-      where: { studentId, status: { not: "PAID" } },
-      _sum: { totalAmount: true },
+    // 2️⃣ Dates
+    const issueDate = new Date();
+    const validTill = addDays(issueDate, 2);
+    const dueDate = new Date(issueDate.getFullYear(), issueDate.getMonth(), 10);
+
+    // 3️⃣ Admission Fee Logic
+    const isNewStudent =
+      student.enrollments.length === 0 && semester.includes("1");
+
+    // 4️⃣ Active Enrollments
+    const activeEnrollments = await prisma.enrollment.count({
+      where: { studentId, status: "ACTIVE" },
     });
-    const arrears = unpaid._sum.totalAmount || 0;
 
-    /* ---- Voucher Totals ---- */
-    const totalAmount = tuitionTotal + fixedTotal + arrears + 60; // Bank charges
-    const challanNo = `SMIU-${Date.now()}`;
-    const bill1Id = `1BILL-${Math.floor(Math.random() * 1000000000000)}`;
-
-    /* ---- Ensure Particulars exist for arrears and bank charges ---- */
-    const specialParticulars = await prisma.particular.findMany({
-      where: { id: { in: [999, 1000] } },
-    });
-    const validSpecialIds = specialParticulars.map((p) => p.id);
-
-    /* ---- Prepare Voucher Items ---- */
-    const itemsData = [
-      { particularId: 1, amount: tuitionTotal }, // Tuition
-      ...deptFees.map((df) => ({
-        particularId: df.particularId,
-        amount: df.amount,
-      })),
-    ];
-
-    // Only add arrears if Particular exists
-    if (validSpecialIds.includes(999)) {
-      itemsData.push({ particularId: 999, amount: arrears });
+    // 5️⃣ Late Fee
+    let lateFee = 0;
+    if (issueDate > dueDate) {
+      const diffDays = Math.ceil((issueDate - dueDate) / (1000 * 60 * 60 * 24));
+      lateFee = diffDays * 100;
     }
 
-    // Only add bank charges if Particular exists
-    if (validSpecialIds.includes(1000)) {
-      itemsData.push({ particularId: 1000, amount: 60 });
-    }
+    // 6️⃣ Particulars
+    const particulars = await prisma.particular.findMany();
+    const getParticular = (name) => particulars.find((p) => p.name === name);
+    const items = [];
 
-    /* ---- Create Voucher ---- */
+    const pushItem = (name, amount) => {
+      if (amount <= 0) return;
+      const particular = getParticular(name);
+      if (!particular) {
+        console.warn(`Missing Particular: ${name}`);
+        return;
+      }
+      items.push({ particularId: particular.id, amount });
+    };
+
+    pushItem("Admission Fee", isNewStudent ? 10000 : 0);
+    pushItem("Tuition Fee", activeEnrollments * 7000);
+    pushItem("Student Activity", 2000);
+    pushItem("Lab / Library", 3000);
+    pushItem("Enrollment Fee", 1000);
+    pushItem("Exam Fee", 2500);
+    pushItem("Bank Charges", 60);
+    pushItem("Late Fee", lateFee);
+
+    const totalAmount = items.reduce((sum, i) => sum + i.amount, 0);
+
+    // 7️⃣ Generate unique bill1Id
+    const bill1Id = `BILL-${student.id}-${Date.now()}`;
+
+    // 8️⃣ Create voucher
     const voucher = await prisma.feeVoucher.create({
       data: {
-        challanNo,
+        challanNo: `CH-${Date.now()}`,
         bill1Id,
-        studentId,
-        semester,
-        academicYear,
-        validTill: new Date(Date.now() + 15 * 86400000),
+        studentId: student.id,
         totalAmount,
-        arrears,
-        items: { create: itemsData },
-      },
-    });
-
-    /* ---- Create Fee Record ---- */
-    await prisma.fee.create({
-      data: {
-        amount: totalAmount,
-        dueAmount: totalAmount,
-        status: "PENDING",
+        arrears: 0,
         semester,
         academicYear,
-        studentId,
-        description: "Semester Fee Voucher",
-        dueDate: new Date(Date.now() + 15 * 86400000),
+        validTill,
+        items: { create: items },
+      },
+      include: {
+        items: { include: { particular: true } },
+        student: { include: { department: true } },
       },
     });
 
     return NextResponse.json(voucher);
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json(
-      { message: "Voucher generation failed", error },
-      { status: 500 },
-    );
+  } catch (err) {
+    console.error(err);
+    return NextResponse.json({ message: "Server Error" }, { status: 500 });
   }
 }
