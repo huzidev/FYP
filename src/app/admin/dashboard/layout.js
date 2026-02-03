@@ -23,7 +23,9 @@ export default function AdminDashboardLayout({ children }) {
   return (
     <div className="flex min-h-screen bg-[#1d1d24]">
       <AdminSidebar />
-      <div className="flex-1 bg-[#1d1d24] p-8">{children}</div>
+      <main className="flex-1 bg-[#1d1d24] px-8 pb-8 pt-6">
+        <div className="mt-4">{children}</div>
+      </main>
     </div>
   );
 }

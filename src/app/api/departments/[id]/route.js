@@ -65,7 +65,8 @@ export async function GET(request, { params }) {
 // PUT /api/departments/[id] - Update department
 export async function PUT(request, { params }) {
   try {
-    const numericId = parseInt(params?.id, 10);
+    const { id } = await params;
+    const numericId = parseInt(id, 10);
     const body = await request.json();
     const { name, code, description, isActive, level } = body;
 
@@ -140,7 +141,8 @@ export async function PUT(request, { params }) {
 // DELETE /api/departments/[id] - Delete department
 export async function DELETE(request, { params }) {
   try {
-    const numericId = parseInt(params?.id, 10);
+    const { id } = await params;
+    const numericId = parseInt(id, 10);
 
     if (!numericId || Number.isNaN(numericId)) {
       return NextResponse.json(

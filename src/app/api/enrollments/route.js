@@ -81,9 +81,10 @@ export async function POST(request) {
     const body = await request.json();
     const { studentId, subjectId, semester, academicYear } = body;
 
-    if (!studentId || !subjectId || !semester || !academicYear) {
+    // Only studentId and subjectId are required
+    if (!studentId || !subjectId) {
       return NextResponse.json(
-        { success: false, error: "Missing required fields" },
+        { success: false, error: "Student ID and Subject ID are required" },
         { status: 400 },
       );
     }
@@ -92,8 +93,8 @@ export async function POST(request) {
       where: {
         studentId: parseInt(studentId),
         subjectId: parseInt(subjectId),
-        semester,
-        academicYear,
+        semester: semester || null,
+        academicYear: academicYear || null,
       },
     });
 
@@ -108,8 +109,8 @@ export async function POST(request) {
       data: {
         studentId: parseInt(studentId),
         subjectId: parseInt(subjectId),
-        semester,
-        academicYear,
+        semester: semester || null,
+        academicYear: academicYear || null,
         status: "ACTIVE",
       },
     });

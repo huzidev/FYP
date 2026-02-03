@@ -181,9 +181,9 @@ const AdminsTable = forwardRef(function AdminsTable(props, ref) {
                       {admin.id === currentUser?.id ? (
                         <button
                           onClick={() => router.push(`/admins/profile/${admin.id}`)}
-                          className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
+                          className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
                         >
-                          View Profile
+                          My Profile
                         </button>
                       ) : (
                         <>

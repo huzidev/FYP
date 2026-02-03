@@ -3,6 +3,36 @@ import { NextResponse } from 'next/server';
 import Papa from 'papaparse';
 import bcrypt from 'bcrypt';
 
+// Valid StudentLevel enum values
+const VALID_LEVELS = ['BACHELOR', 'MASTER'];
+
+// Map common level names to enum values
+function normalizeLevel(level) {
+  if (!level) return null;
+  const normalized = level.toString().toUpperCase().trim();
+
+  // Direct match
+  if (VALID_LEVELS.includes(normalized)) {
+    return normalized;
+  }
+
+  // Map common alternatives
+  const levelMap = {
+    'GRADUATE': 'MASTER',
+    'POSTGRADUATE': 'MASTER',
+    'POST-GRADUATE': 'MASTER',
+    'MASTERS': 'MASTER',
+    'MS': 'MASTER',
+    'MSC': 'MASTER',
+    'UNDERGRADUATE': 'BACHELOR',
+    'BACHELORS': 'BACHELOR',
+    'BS': 'BACHELOR',
+    'BSC': 'BACHELOR',
+  };
+
+  return levelMap[normalized] || null;
+}
+
 // POST /api/students/bulk - Bulk upload (create) students via CSV
 export async function POST(request) {
   try {
@@ -43,12 +73,24 @@ export async function POST(request) {
       try {
         const studentData = studentsData[i];
         
+        // Normalize level
+        const normalizedLevel = normalizeLevel(studentData.level);
+
         // Validation
-        if (!studentData.fullName || !studentData.email || !studentData.studentId || 
+        if (!studentData.fullName || !studentData.email || !studentData.studentId ||
             !studentData.level || !studentData.departmentId) {
           results.errors.push({
             row: i + 1,
             error: 'Missing required fields',
+            data: studentData,
+          });
+          continue;
+        }
+
+        if (!normalizedLevel) {
+          results.errors.push({
+            row: i + 1,
+            error: `Invalid level "${studentData.level}". Expected: BACHELOR, MASTER, or common alternatives like Graduate, Undergraduate`,
             data: studentData,
           });
           continue;
@@ -85,7 +127,7 @@ export async function POST(request) {
             email: studentData.email,
             password: hashedPassword,
             studentId: studentData.studentId,
-            level: studentData.level,
+            level: normalizedLevel,
             departmentId: parseInt(studentData.departmentId),
             phone: studentData.phone || null,
             address: studentData.address || null,
@@ -202,6 +244,18 @@ export async function PUT(request) {
         // Build update data (only include fields that are provided)
         const updateData = {};
         if (studentData.fullName) updateData.fullName = studentData.fullName;
+        if (studentData.level) {
+          const normalizedLevel = normalizeLevel(studentData.level);
+          if (!normalizedLevel) {
+            results.errors.push({
+              row: i + 1,
+              error: `Invalid level "${studentData.level}". Expected: BACHELOR, MASTER, or common alternatives`,
+              data: studentData,
+            });
+            continue;
+          }
+          updateData.level = normalizedLevel;
+        }
         if (studentData.email && studentData.email !== existingStudent.email) {
           // Check if new email already exists
           const emailExists = await prisma.student.findFirst({
@@ -217,7 +271,6 @@ export async function PUT(request) {
           }
           updateData.email = studentData.email;
         }
-        if (studentData.level) updateData.level = studentData.level;
         if (studentData.departmentId) updateData.departmentId = parseInt(studentData.departmentId);
         if (studentData.phone !== undefined) updateData.phone = studentData.phone || null;
         if (studentData.address !== undefined) updateData.address = studentData.address || null;

@@ -5,7 +5,7 @@ import { NextResponse } from 'next/server';
 // GET /api/admin/[id] - Get admin by ID
 export async function GET(request, { params }) {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     const admin = await prisma.admin.findUnique({
       where: { id: parseInt(id) },
@@ -43,7 +43,7 @@ export async function GET(request, { params }) {
 // PUT /api/admin/[id] - Update admin
 export async function PUT(request, { params }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
     const { fullName, email, password, role, phone, address, isActive } = body;
 
@@ -107,7 +107,7 @@ export async function PUT(request, { params }) {
 // DELETE /api/admin/[id] - Delete admin
 export async function DELETE(request, { params }) {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     // Check if admin exists
     const existingAdmin = await prisma.admin.findUnique({
