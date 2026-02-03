@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import FeeVoucher from "../../../../../Component/FeeVoucher";
 import jsPDF from "jspdf";
@@ -10,8 +11,8 @@ export default function GenerateFee() {
   const [student, setStudent] = useState(null);
   const [voucher, setVoucher] = useState(null);
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
-  // Load current user
   useEffect(() => {
     const load = async () => {
       const { isAuthenticated, getCurrentUser, USER_TYPES } =
@@ -62,14 +63,18 @@ export default function GenerateFee() {
     }
   };
 
-  // Download PDF logic
+  const goToInstallment = () => {
+    if (!voucher) return toast.error("No voucher found");
+
+    // Store voucher in sessionStorage to pass to Installment page
+    sessionStorage.setItem("lastVoucher", JSON.stringify(voucher));
+    router.push("/student/dashboard/finance/installment"); // Update path to your Installment page
+  };
+
   const downloadPDF = async () => {
     if (!voucher) return;
-
     const originalVoucher = document.querySelector(".voucher-content");
-
     const printClone = originalVoucher.cloneNode(true);
-
     printClone.style.position = "absolute";
     printClone.style.top = "-9999px";
     printClone.style.left = "-9999px";
@@ -79,9 +84,7 @@ export default function GenerateFee() {
     const fixColors = (el) => {
       el.style.color = "#000000";
       el.style.backgroundColor = "#ffffff";
-      for (let child of el.children) {
-        fixColors(child);
-      }
+      for (let child of el.children) fixColors(child);
     };
     fixColors(printClone);
 
@@ -91,12 +94,10 @@ export default function GenerateFee() {
         useCORS: true,
         allowTaint: true,
         backgroundColor: "#ffffff",
-        logging: false,
       });
 
       const imgData = canvas.toDataURL("image/png");
       const pdf = new jsPDF("landscape", "pt", "a4");
-
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
 
@@ -127,12 +128,21 @@ export default function GenerateFee() {
         </button>
 
         {voucher && (
-          <button
-            onClick={downloadPDF}
-            className="bg-green-600 text-white px-5 py-2 rounded"
-          >
-            Download PDF
-          </button>
+          <>
+            <button
+              onClick={downloadPDF}
+              className="bg-green-600 text-white px-5 py-2 rounded"
+            >
+              Download PDF
+            </button>
+
+            <button
+              onClick={goToInstallment}
+              className="bg-yellow-600 text-white px-5 py-2 rounded"
+            >
+              Installment of Fee Voucher
+            </button>
+          </>
         )}
       </div>
 

@@ -74,14 +74,11 @@ const StudentDashboard = () => {
           name: "Current Courses",
           link: "/student/dashboard/academic/current-course",
         },
-        { name: "Program Syllabus", link: "#" },
-        { name: "Attendance Report", link: "#" },
         {
           name: "Grade History / Transcript",
           link: "/student/dashboard/academic/transcript",
         },
-        { name: "PLO/CLO Attainment", link: "#" },
-        { name: "Program Sheet", link: "#" },
+        
       ],
       icon: <BookOpen size={18} />,
     },
@@ -92,9 +89,11 @@ const StudentDashboard = () => {
           name: "Student Fee Status",
           link: "/student/dashboard/finance/student-fee",
         },
-        { name: "Installment Fee Voucher", 
-          link: "/student/dashboard/finance/installment" },
-        { name: "Fee Statement", link: "#" },
+        {
+          name: "Installment Fee Voucher",
+          link: "/student/dashboard/finance/installment",
+        },
+        
         {
           name: "Generate Fee Voucher",
           link: "/student/dashboard/finance/generate-fee",
@@ -103,39 +102,25 @@ const StudentDashboard = () => {
       icon: <CreditCard size={18} />,
     },
     {
-      title: "Resources",
-      items: [
-        { name: "Search KIET Library", link: "#" },
-        { name: "Digital Library", link: "#" },
-        { name: "Book Issued", link: "#" },
-      ],
-      icon: <Info size={18} />,
-    },
-    {
       title: "Admin/Schedule",
       items: [
         {
           name: "Self Registration",
           link: "/student/dashboard/Self-Registration",
         },
-        { name: "Class Schedule", link: "#" },
-        { name: "Exam Schedule", link: "#" },
-        { name: "Academic Calendar", link: "#" },
-        { name: "Online Clearance", link: "#" },
+        {
+          name: "Class Schedule",
+          link: "/student/dashboard/academic/class-schedule",
+        },
+        {
+          name: "Exam Schedule",
+          link: "/student/dashboard/academic/exam-schedule",
+        },
+       
       ],
       icon: <Calendar size={18} />,
     },
-    {
-      title: "Support & Info",
-      items: [
-        { name: "Alumni Info", link: "#" },
-        { name: "Test Results (Standard & OBE)", link: "#" },
-        { name: "Student Support", link: "#" },
-        { name: "Notifications", link: "#" },
-        { name: "Last 30 Days Emails", link: "#" },
-      ],
-      icon: <FileText size={18} />,
-    },
+    
   ];
 
   return (

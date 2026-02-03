@@ -14,7 +14,7 @@ export default function ActionIcons({ toggleProfile }) {
   const toggle = (key) => setOpen(open === key ? null : key);
 
   return (
-    <div className="relative flex items-center gap-3">
+    <div className="relative flex items-center gap-3 text-white">
       <NotificationIcon onClick={() => toggle("notification")} />
       <MessageIcon onClick={() => toggle("message")} />
       <ProfileIcon onClick={toggleProfile} />
