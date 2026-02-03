@@ -86,6 +86,10 @@ export async function POST(request) {
       semester,
       level,
       departmentId,
+      dayOfWeek,
+      startTime,
+      endTime,
+      classroom,
       teacherAssignments // Array of { teacherId, capacity } objects
     } = body;
 
@@ -121,6 +125,10 @@ export async function POST(request) {
           semester: semester ? parseInt(semester) : null,
           level,
           departmentId: parseInt(departmentId),
+          dayOfWeek: dayOfWeek || null,
+          startTime: startTime || null,
+          endTime: endTime || null,
+          classroom: classroom || null,
         },
       });
 

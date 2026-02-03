@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
-import { DepartmentService, StaffService, StudentService } from '../../../lib/api';
+import { AdminService, DepartmentService, StaffService, StudentService } from '../../../lib/api';
 import Eyebtn from '../../User/Eyebtn';
 
 function AddUserForm({ userType = 'student', onSuccess, onCancel }) {
@@ -24,6 +24,8 @@ function AddUserForm({ userType = 'student', onSuccess, onCancel }) {
     role: 'TEACHER',
     salary: '',
     hireDate: '',
+    // Admin specific
+    adminRole: 'ADMIN',
   });
 
   const [departments, setDepartments] = useState([]);
@@ -91,6 +93,8 @@ function AddUserForm({ userType = 'student', onSuccess, onCancel }) {
     } else if (userType === 'staff') {
       if (!formData.staffId.trim()) newErrors.staffId = 'Staff ID is required';
       if (!formData.role) newErrors.role = 'Role is required';
+    } else if (userType === 'admin') {
+      if (!formData.adminRole) newErrors.adminRole = 'Admin role is required';
     }
 
     setErrors(newErrors);
@@ -133,6 +137,11 @@ function AddUserForm({ userType = 'student', onSuccess, onCancel }) {
           hireDate: formData.hireDate || undefined,
         });
         response = await StaffService.create(submitData);
+      } else if (userType === 'admin') {
+        Object.assign(submitData, {
+          role: formData.adminRole,
+        });
+        response = await AdminService.create(submitData);
       }
 
       // Reset form first
@@ -153,6 +162,7 @@ function AddUserForm({ userType = 'student', onSuccess, onCancel }) {
         role: 'TEACHER',
         salary: '',
         hireDate: '',
+        adminRole: 'ADMIN',
       });
 
       // Clear errors
@@ -374,6 +384,27 @@ function AddUserForm({ userType = 'student', onSuccess, onCancel }) {
               />
             </div>
           </>
+        ) : userType === 'admin' ? (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  Admin Role *
+                </label>
+                <select
+                  name="adminRole"
+                  value={formData.adminRole}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-600 rounded-md bg-[#1e1e26] text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  disabled={isLoading}
+                >
+                  <option value="ADMIN">Admin</option>
+                  <option value="SUPER_ADMIN">Super Admin</option>
+                </select>
+                {errors.adminRole && <p className="text-red-500 text-sm mt-1">{errors.adminRole}</p>}
+              </div>
+            </div>
+          </>
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -490,7 +521,7 @@ function AddUserForm({ userType = 'student', onSuccess, onCancel }) {
             className="px-6 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={isLoading}
           >
-            {isLoading ? 'Creating...' : `Create ${userType === 'student' ? 'Student' : 'Staff'}`}
+            {isLoading ? 'Creating...' : `Create ${userType === 'student' ? 'Student' : userType === 'admin' ? 'Admin' : 'Staff'}`}
           </button>
         </div>
       </form>
