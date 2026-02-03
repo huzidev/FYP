@@ -11,18 +11,18 @@ const EnrollmentPage = () => {
   const [loading, setLoading] = useState(true);
 
   const [courseCode, setCourseCode] = useState("");
-
   const [filteredCourses, setFilteredCourses] = useState([]);
   const [enrolledCourses, setEnrolledCourses] = useState([]);
 
-  // pagination
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(5);
-  const [totalPages, setTotalPages] = useState(1);
+  // 🔹 NEW → Fee Clearance State
+  const [isFeeCleared, setIsFeeCleared] = useState(false);
+
+  const [teachersByCourse, setTeachersByCourse] = useState({});
+  const [selectedTeacher, setSelectedTeacher] = useState({});
 
   const router = useRouter();
 
-  /* ===================== AUTH + INITIAL LOAD ===================== */
+  /* ===================== AUTH ===================== */
   useEffect(() => {
     const load = async () => {
       const { isAuthenticated, getCurrentUser, USER_TYPES } =
@@ -40,33 +40,50 @@ const EnrollmentPage = () => {
       }
 
       setStudent(user);
-      await fetchEnrolledCourses(user.id, 1, limit);
+
+      await fetchEnrolledCourses(user.id);
+      await checkFeeClearance(user.id); // ⭐ NEW
+
       setLoading(false);
     };
 
     load();
   }, [router]);
 
-  /* ===================== FETCH ENROLLED COURSES ===================== */
-  const fetchEnrolledCourses = async (studentId, pageNo = 1, limitNo = 5) => {
+  /* ===================== FEE CLEARANCE CHECK ===================== */
+  const checkFeeClearance = async (studentId) => {
     try {
-      const res = await fetch(
-        `/api/enrollments?studentId=${studentId}&page=${pageNo}&limit=${limitNo}`,
-      );
+      const res = await fetch(`/api/fees/clearance?studentId=${studentId}`);
       const data = await res.json();
 
-      if (data.success) {
-        setEnrolledCourses(data.data);
-        setTotalPages(data.totalPages);
-        setPage(pageNo);
+      if (res.ok) {
+        setIsFeeCleared(data.allowed);
+      } else {
+        setIsFeeCleared(false);
       }
-    } catch (err) {
+    } catch {
+      setIsFeeCleared(false);
+    }
+  };
+
+  /* ===================== FETCH ENROLLED ===================== */
+  const fetchEnrolledCourses = async (studentId) => {
+    try {
+      const res = await fetch(`/api/enrollments?studentId=${studentId}`);
+      const data = await res.json();
+      if (data.success) setEnrolledCourses(data.data);
+    } catch {
       toast.error("Failed to load enrolled courses");
     }
   };
 
-  /* ===================== SEARCH COURSES ===================== */
+  /* ===================== SEARCH ===================== */
   const handleSearch = async () => {
+    if (!isFeeCleared) {
+      toast.error("You don't have enrollment access at this time");
+      return;
+    }
+
     if (!courseCode.trim()) {
       toast.error("Course code is required");
       return;
@@ -88,14 +105,42 @@ const EnrollmentPage = () => {
       }
 
       setFilteredCourses(data.data);
-    } catch (err) {
+      data.data.forEach(fetchTeachersForCourse);
+    } catch {
       toast.error("Search failed");
     }
   };
 
+  /* ===================== FETCH TEACHERS ===================== */
+  const fetchTeachersForCourse = async (course) => {
+    try {
+      const res = await fetch(`/api/teacher-subjects?subjectId=${course.id}`);
+      const data = await res.json();
+
+      if (data.success) {
+        setTeachersByCourse((prev) => ({
+          ...prev,
+          [course.id]: data.data,
+        }));
+      }
+    } catch {
+      toast.error("Failed to load teachers");
+    }
+  };
+
   /* ===================== ENROLL ===================== */
-  const handleEnroll = async (subjectId, courseSemester) => {
-    const currentYear = new Date().getFullYear();
+  const handleEnroll = async (course) => {
+    // ⭐ SECURITY CHECK
+    if (!isFeeCleared) {
+      toast.error("You don't have enrollment access at this time");
+      return;
+    }
+
+    const teacherSubject = selectedTeacher[course.id];
+    if (!teacherSubject) {
+      toast.error("Please select a teacher");
+      return;
+    }
 
     try {
       const res = await fetch("/api/enrollments", {
@@ -103,22 +148,23 @@ const EnrollmentPage = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           studentId: student.id,
-          subjectId,
-          semester: String(courseSemester),
-          academicYear: String(currentYear),
+          subjectId: course.id,
+          teacherId: teacherSubject.teacherId,
+          teacherSubjectId: teacherSubject.id,
+          semester: String(course.semester),
+          academicYear: String(new Date().getFullYear()),
         }),
       });
 
       const data = await res.json();
-
       if (!res.ok) {
         toast.error(data.error || "Enrollment failed");
         return;
       }
 
-      toast.success("Course added successfully 🎉");
-      fetchEnrolledCourses(student.id, page, limit);
-    } catch (err) {
+      toast.success("Course enrolled successfully 🎉");
+      fetchEnrolledCourses(student.id);
+    } catch {
       toast.error("Server error");
     }
   };
@@ -131,15 +177,14 @@ const EnrollmentPage = () => {
       });
 
       const data = await res.json();
-
       if (!res.ok) {
         toast.error(data.error || "Remove failed");
         return;
       }
 
       toast.success("Enrollment removed successfully");
-      fetchEnrolledCourses(student.id, page, limit);
-    } catch (err) {
+      fetchEnrolledCourses(student.id);
+    } catch {
       toast.error("Server error");
     }
   };
@@ -155,36 +200,29 @@ const EnrollmentPage = () => {
     );
   }
 
-  if (!student) return null;
-
   return (
-    <div className="p-4 sm:p-6 space-y-6 max-w-full">
-      {/* HEADER */}
-      <div>
-        <Link
-          href="/student/dashboard"
-          className="text-indigo-400 inline-flex items-center gap-2 text-sm"
-        >
-          <ArrowLeft size={16} /> Back to Dashboard
-        </Link>
+    <div className="p-6 space-y-6">
+      <Link href="/student/dashboard" className="text-indigo-400 flex gap-2">
+        <ArrowLeft size={16} /> Back
+      </Link>
 
-        <h1 className="text-3xl font-bold text-white mt-2">
-          Self Registration
-        </h1>
-        <p className="text-gray-400 text-sm">
-          Department: {student.department?.name}
-        </p>
-      </div>
+      <h1 className="text-3xl font-bold text-white">Self Registration</h1>
+
+      {/* ⭐ SHOW WARNING IF FEE NOT CLEARED */}
+      {!isFeeCleared && (
+        <div className="bg-red-600/20 border border-red-500 text-red-300 p-4 rounded">
+          You don't have enrollment access at this time. Please clear your fees.
+        </div>
+      )}
 
       {/* SEARCH */}
-      <div className="bg-[#2d2d39] p-6 rounded-xl grid sm:grid-cols-2 gap-4">
+      <div className="grid sm:grid-cols-2 gap-4 bg-[#2d2d39] p-6 rounded-xl">
         <input
           value={courseCode}
           onChange={(e) => setCourseCode(e.target.value)}
           placeholder="Course Code"
           className="px-4 py-3 rounded bg-[#1e1e26] text-white"
         />
-
         <button
           onClick={handleSearch}
           className="bg-indigo-600 text-white rounded flex items-center justify-center gap-2"
@@ -194,35 +232,57 @@ const EnrollmentPage = () => {
       </div>
 
       {/* SEARCH RESULTS */}
-      {filteredCourses.length > 0 && (
-        <div className="space-y-4">
-          {filteredCourses.map((course) => (
-            <div key={course.id} className="bg-[#1e1e26] p-4 rounded border">
-              <div className="flex justify-between">
-                <div>
-                  <p className="text-indigo-400">{course.code}</p>
-                  <p className="text-white font-bold">{course.name}</p>
-                  <p className="text-gray-400 text-sm">
-                    Semester {course.semester} | Credits {course.creditHours}
-                  </p>
-                </div>
+      {filteredCourses.map((course) => (
+        <div
+          key={course.id}
+          className="bg-[#1e1e26] p-4 rounded border space-y-3"
+        >
+          <div>
+            <p className="text-indigo-400">{course.code}</p>
+            <p className="text-white font-bold">{course.name}</p>
+            <p className="text-gray-400 text-sm">
+              Semester {course.semester} | Credits {course.creditHours}
+            </p>
+          </div>
 
-                <button
-                  disabled={isAlreadyEnrolled(course.id)}
-                  onClick={() => handleEnroll(course.id, course.semester)}
-                  className={`px-4 py-2 rounded ${
-                    isAlreadyEnrolled(course.id)
-                      ? "bg-gray-500"
-                      : "bg-green-600 hover:bg-green-700"
-                  }`}
-                >
-                  {isAlreadyEnrolled(course.id) ? "Enrolled" : "Enroll"}
-                </button>
-              </div>
-            </div>
-          ))}
+          <select
+            className="w-full bg-[#2d2d39] text-white p-2 rounded"
+            value={selectedTeacher[course.id]?.id || ""}
+            onChange={(e) => {
+              const teacher = teachersByCourse[course.id].find(
+                (t) => t.id === parseInt(e.target.value),
+              );
+              setSelectedTeacher((prev) => ({
+                ...prev,
+                [course.id]: teacher,
+              }));
+            }}
+          >
+            <option value="">Select Teacher</option>
+            {(teachersByCourse[course.id] || []).map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.teacher.fullName} ({t.availableSpots} seats)
+              </option>
+            ))}
+          </select>
+
+          <button
+            disabled={isAlreadyEnrolled(course.id) || !isFeeCleared}
+            onClick={() => handleEnroll(course)}
+            className={`px-4 py-2 rounded w-full ${
+              isAlreadyEnrolled(course.id) || !isFeeCleared
+                ? "bg-gray-500"
+                : "bg-green-600 hover:bg-green-700"
+            }`}
+          >
+            {isAlreadyEnrolled(course.id)
+              ? "Enrolled"
+              : !isFeeCleared
+                ? "Fee Pending"
+                : "Enroll"}
+          </button>
         </div>
-      )}
+      ))}
 
       {/* ENROLLED COURSES */}
       <div className="bg-[#2d2d39] p-6 rounded-xl">
