@@ -1,7 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useImperativeHandle, forwardRef } from "react";
-import { ApiError, StudentService } from "../../../lib/api";
+import { ApiError, DepartmentService, StudentService } from "../../../lib/api";
 
 // Helper function to escape CSV fields
 function escapeCsvField(field) {
@@ -19,6 +19,7 @@ const StudentsTable = forwardRef(function StudentsTable(props, ref) {
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDepartment, setSelectedDepartment] = useState("");
+  const [departments, setDepartments] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState({});
   const router = useRouter();
@@ -50,6 +51,19 @@ const StudentsTable = forwardRef(function StudentsTable(props, ref) {
   useEffect(() => {
     fetchStudents(currentPage, searchTerm, selectedDepartment);
   }, [currentPage, searchTerm, selectedDepartment]);
+
+  // Fetch departments for filter dropdown
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      try {
+        const response = await DepartmentService.getAll();
+        setDepartments(response.data.data || response.data || []);
+      } catch (err) {
+        console.error("Error fetching departments:", err);
+      }
+    };
+    fetchDepartments();
+  }, []);
 
   const handleSearch = (e) => {
     setSearchTerm(e.target.value);
@@ -139,7 +153,11 @@ const StudentsTable = forwardRef(function StudentsTable(props, ref) {
             className="px-4 py-2 border border-gray-600 rounded-lg bg-[#1e1e26] text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
           >
             <option value="">All Departments</option>
-            {/* You can populate this with actual departments */}
+            {departments.map((dept) => (
+              <option key={dept.id} value={dept.id}>
+                {dept.name}
+              </option>
+            ))}
           </select>
         </div>
       </div>

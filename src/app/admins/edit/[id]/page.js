@@ -97,12 +97,13 @@ export default function EditAdminPage() {
     }
   };
 
+  const isOwnProfile = currentUser && admin && admin.id === currentUser.id;
+
   const canEdit = () => {
     if (!currentUser || !admin) return false;
-    // Super admin can't be edited
-    if (admin.role === "SUPER_ADMIN") return false;
-    // Current user can't edit themselves
-    if (admin.id === currentUser.id) return false;
+    // Super admin can't be edited by others (but can edit themselves)
+    if (admin.role === "SUPER_ADMIN" && !isOwnProfile) return false;
+    // Allow editing own profile or other admins
     return currentUser.role === "SUPER_ADMIN" || currentUser.role === "ADMIN";
   };
 
@@ -133,23 +134,28 @@ export default function EditAdminPage() {
   return (
     <div className="min-h-screen bg-[#1d1d24]">
       <Header />
-      <div className="container mx-auto px-6 py-8">
+      <div className="container mx-auto px-6 py-8 mt-16">
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-white mb-2">Edit Admin</h1>
+            <h1 className="text-3xl font-bold text-white mb-2">
+              {isOwnProfile ? "Edit My Profile" : "Edit Admin"}
+            </h1>
             <p className="text-gray-400">{admin?.fullName}</p>
           </div>
-          <button
-            onClick={handleToggleActive}
-            disabled={saving}
-            className={`px-4 py-2 rounded-lg transition ${
-              admin?.isActive
-                ? "bg-red-600 hover:bg-red-700"
-                : "bg-green-600 hover:bg-green-700"
-            } text-white disabled:opacity-50`}
-          >
-            {saving ? "Updating..." : admin?.isActive ? "Deactivate" : "Activate"}
-          </button>
+          {/* Only show Activate/Deactivate for other admins, not own profile */}
+          {!isOwnProfile && (
+            <button
+              onClick={handleToggleActive}
+              disabled={saving}
+              className={`px-4 py-2 rounded-lg transition ${
+                admin?.isActive
+                  ? "bg-red-600 hover:bg-red-700"
+                  : "bg-green-600 hover:bg-green-700"
+              } text-white disabled:opacity-50`}
+            >
+              {saving ? "Updating..." : admin?.isActive ? "Deactivate" : "Activate"}
+            </button>
+          )}
         </div>
 
         {error && (
@@ -196,13 +202,18 @@ export default function EditAdminPage() {
                 name="role"
                 value={formData.role}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-600 rounded-md bg-[#1e1e26] text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className={`w-full px-3 py-2 border border-gray-600 rounded-md bg-[#1e1e26] text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                  isOwnProfile ? "opacity-60 cursor-not-allowed" : ""
+                }`}
                 required
-                disabled={admin?.role === "SUPER_ADMIN"}
+                disabled={admin?.role === "SUPER_ADMIN" || isOwnProfile}
               >
                 <option value="ADMIN">Admin</option>
                 <option value="SUPER_ADMIN">Super Admin</option>
               </select>
+              {isOwnProfile && (
+                <p className="text-xs text-gray-500 mt-1">You cannot change your own role</p>
+              )}
             </div>
 
             <div>

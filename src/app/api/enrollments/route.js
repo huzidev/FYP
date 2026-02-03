@@ -79,7 +79,7 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { studentId, subjectId, semester, academicYear } = body;
+    const { studentId, subjectId, teacherSubjectId, teacherId, semester, academicYear } = body;
 
     // Only studentId and subjectId are required
     if (!studentId || !subjectId) {
@@ -105,10 +105,23 @@ export async function POST(request) {
       );
     }
 
+    // If teacherSubjectId is provided, get the teacherId from it
+    let resolvedTeacherId = teacherId ? parseInt(teacherId) : null;
+    if (teacherSubjectId && !resolvedTeacherId) {
+      const teacherSubject = await prisma.teacherSubject.findUnique({
+        where: { id: parseInt(teacherSubjectId) },
+      });
+      if (teacherSubject) {
+        resolvedTeacherId = teacherSubject.teacherId;
+      }
+    }
+
     const enrollment = await prisma.enrollment.create({
       data: {
         studentId: parseInt(studentId),
         subjectId: parseInt(subjectId),
+        teacherSubjectId: teacherSubjectId ? parseInt(teacherSubjectId) : null,
+        teacherId: resolvedTeacherId,
         semester: semester || null,
         academicYear: academicYear || null,
         status: "ACTIVE",

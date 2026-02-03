@@ -48,8 +48,9 @@ export default function StudentEnrollmentModal({
 
       const [studentsRes, enrollmentsRes] = await Promise.all([
         StudentService.getAll(params),
+        // Fetch enrollments by subjectId only (not teacherSubjectId)
+        // because the unique constraint is on studentId+subjectId+semester+academicYear
         EnrollmentService.getAll({
-          teacherSubjectId: assignment.id,
           subjectId: assignment.subjectId,
         }),
       ]);
