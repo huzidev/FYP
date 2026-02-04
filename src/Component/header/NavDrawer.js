@@ -100,7 +100,7 @@ export default function NavDrawer({ open, onClose }) {
           <div className="ml-8 flex flex-col gap-1">
             <SubLink
               href="/student/dashboard/finance/installment"
-              icon={FileText}
+              icon={FileText} 
               label="Installment Fee Voucher"
             />
             <SubLink
